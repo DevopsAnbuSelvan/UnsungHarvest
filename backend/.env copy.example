@@ -1,0 +1,37 @@
+NODE_ENV=development
+PORT=3000
+API_PREFIX=api/v1
+
+# Neon PostgreSQL
+# DATABASE_HOST=your-neon-host.neon.tech
+# DATABASE_PORT=5432
+# DATABASE_USERNAME=your_username
+# DATABASE_PASSWORD=your_password
+# DATABASE_NAME=unsung_harvest
+# DATABASE_SSL=true
+
+DATABASE_HOST=ep-young-pond-azrfmqtl-pooler.c-3.ap-southeast-1.aws.neon.tech
+DATABASE_PORT=5432
+DATABASE_USERNAME=neondb_owner
+DATABASE_PASSWORD=npg_mHGxZd64ahPD
+DATABASE_NAME=neondb
+DATABASE_SSL=true
+
+# JWT
+JWT_SECRET=your-super-secret-jwt-key-change-in-production
+JWT_EXPIRES_IN=15m
+JWT_REFRESH_SECRET=your-super-secret-refresh-key-change-in-production
+JWT_REFRESH_EXPIRES_IN=7d
+
+# Uploads
+UPLOAD_MAX_SIZE=5242880
+UPLOAD_ALLOWED_EXTENSIONS=jpg,jpeg,png,webp
+UPLOAD_DEST=./uploads
+
+# Rate Limiting
+THROTTLE_TTL=60000
+THROTTLE_LIMIT=100
+
+# App
+APP_NAME=Unsung Harvest
+APP_URL=http://localhost:3001
