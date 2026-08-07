@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/toast-context";
-import { Mail, Phone, MapPin, Heart } from "lucide-react";
+import { Mail, Phone, MapPin } from "lucide-react";
 
 interface ContactForm {
   name: string;
@@ -74,20 +74,6 @@ export default function ContactPage() {
             ))}
           </div>
         </div>
-
-        <p className="mt-16 text-center text-sm text-muted-foreground">
-          Made with{" "}
-          <Heart className="inline h-4 w-4 text-red-500 fill-red-500 align-text-bottom" />{" "}
-          by{" "}
-          <a
-            href="https://anbyte.in"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="font-medium text-primary hover:underline"
-          >
-            anbu
-          </a>
-        </p>
       </div>
     </PublicLayout>
   );

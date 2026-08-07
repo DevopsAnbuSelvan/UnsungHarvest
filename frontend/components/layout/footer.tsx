@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Leaf, Mail, Phone, MapPin } from "lucide-react";
+import { Leaf, Mail, Phone, MapPin, Heart } from "lucide-react";
 
 const footerLinks = {
   shop: [
@@ -77,18 +77,31 @@ export function Footer() {
               </li>
               <li className="flex items-center gap-2">
                 <Phone className="h-4 w-4" />
-                +91 98765 43210
+                +91 91504 92260
               </li>
               <li className="flex items-center gap-2">
                 <MapPin className="h-4 w-4" />
-                Bengaluru, Karnataka
+                Dindigul, Tamil Nadu, India
               </li>
             </ul>
           </div>
         </div>
 
-        <div className="border-t mt-8 pt-8 text-center text-sm text-muted-foreground">
-          &copy; {new Date().getFullYear()} Unsung Harvest. All rights reserved.
+        <div className="border-t mt-8 pt-8 text-center text-sm text-muted-foreground space-y-2">
+          <p>&copy; {new Date().getFullYear()} Unsung Harvest. All rights reserved.</p>
+          <p>
+            Made with{" "}
+            <Heart className="inline h-4 w-4 text-red-500 fill-red-500 align-text-bottom" />{" "}
+            by{" "}
+            <a
+              href="https://anbyte.in"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium text-primary hover:underline"
+            >
+              ANBU
+            </a>
+          </p>
         </div>
       </div>
     </footer>
