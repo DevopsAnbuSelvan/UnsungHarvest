@@ -33,14 +33,14 @@ export const checkoutSchema = z.object({
 export const productSchema = z.object({
   name: z.string().min(2, "Product name is required"),
   localName: z.string().optional(),
-  description: z.string().min(10, "Description must be at least 10 characters"),
+  description: z.string().min(2, "Description is required"),
   price: z.coerce.number().positive("Price must be positive"),
   stock: z.coerce.number().int().min(0, "Stock cannot be negative"),
   categoryId: z.string().min(1, "Category is required"),
   season: z.array(z.string()).min(1, "Select at least one season"),
   isGiTagged: z.boolean(),
   giTagNumber: z.string().optional(),
-  availabilityMonths: z.array(z.number()).min(1, "Select availability months"),
+  availabilityMonths: z.array(z.number()).optional(),
   cultivationPlace: z.string().optional(),
   locationId: z.string().optional(),
 });

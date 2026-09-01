@@ -26,8 +26,8 @@ export const productService = {
     const { data } = await api.post(API_ENDPOINTS.products.list, {
       page: filters?.page ?? 1,
       limit: filters?.limit ?? LIST_LIMIT,
-      search: filters?.search,
-      categoryId: filters?.categoryId,
+      ...(filters?.search ? { search: filters.search } : {}),
+      ...(filters?.categoryId ? { categoryId: filters.categoryId } : {}),
       sortBy: filters?.sortBy,
       sortOrder: filters?.sortOrder?.toUpperCase(),
       status: "approved",

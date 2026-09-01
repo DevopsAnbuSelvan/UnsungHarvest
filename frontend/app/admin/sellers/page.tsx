@@ -20,7 +20,7 @@ export default function ManageSellersPage() {
 
   const { data } = useQuery({
     queryKey: ["admin-sellers", status, page],
-    queryFn: () => adminService.getSellers(status),
+    queryFn: () => adminService.getSellers(status, page),
   });
 
   const approve = useMutation({

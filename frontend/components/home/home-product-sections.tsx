@@ -1,11 +1,14 @@
 "use client";
 
 import { ProductGrid } from "@/components/product/product-grid";
+import { HomeImagesCarousel } from "@/components/home/home-images-carousel";
 import { productService } from "@/services/product.service";
 
 export function HomeProductSections() {
   return (
     <>
+      <HomeImagesCarousel />
+
       <div className="container mx-auto px-4 py-16">
         <ProductGrid
           title="Featured Seasonal Products"

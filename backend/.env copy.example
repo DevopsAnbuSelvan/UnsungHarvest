@@ -28,6 +28,10 @@ UPLOAD_MAX_SIZE=5242880
 UPLOAD_ALLOWED_EXTENSIONS=jpg,jpeg,png,webp
 UPLOAD_DEST=./uploads
 
+# Vercel Blob (recommended for production — get token from Vercel Dashboard → Storage → Blob)
+BLOB_STORE_ID="store_FMfMWKFVE4KZ4Arj"
+BLOB_READ_WRITE_TOKEN="vercel_blob_rw_FMfMWKFVE4KZ4Arj_6Lgd9h2YOdF5b2XOcRE4Fxw43i3H7d"
+
 # Rate Limiting
 THROTTLE_TTL=60000
 THROTTLE_LIMIT=100

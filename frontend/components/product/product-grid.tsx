@@ -25,15 +25,17 @@ export function ProductGrid({
   error: propError,
   onRetry,
 }: ProductGridProps) {
+  const shouldFetch = !!fetchFn && !propProducts;
+
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: queryKey ? ["products", queryKey] : ["products", "static"],
-    queryFn: fetchFn!,
-    enabled: !!fetchFn && !propProducts,
+    queryFn: fetchFn ?? (async () => [] as Product[]),
+    enabled: shouldFetch,
   });
 
   const products = propProducts ?? data;
-  const loading = propLoading ?? (fetchFn && !propProducts ? isLoading : false);
-  const hasError = propError ?? (fetchFn && !propProducts ? !!error : false);
+  const loading = propLoading ?? (shouldFetch ? isLoading : false);
+  const hasError = propError ?? (shouldFetch ? !!error : false);
 
   if (loading) {
     return (

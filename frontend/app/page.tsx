@@ -34,6 +34,11 @@ export default function HomePage() {
                   Become a Seller
                 </Button>
               </Link>
+              <Link href="#our-works">
+                <Button size="lg" variant="glass">
+                  Our Works
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
@@ -110,7 +115,7 @@ async function CategorySection() {
       {categories.map((cat) => (
         <Link
           key={cat.id}
-          href={`/products?category=${cat.slug}`}
+          href={`/products?category=${cat.id}`}
           className="glass-card rounded-2xl p-6 text-center hover:shadow-lg hover:-translate-y-1 transition-all"
         >
           <h3 className="font-semibold">{cat.name}</h3>

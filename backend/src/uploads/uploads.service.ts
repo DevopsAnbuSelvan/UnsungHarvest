@@ -7,8 +7,11 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { extname } from 'path';
+import { existsSync, mkdirSync } from 'fs';
+import { writeFile, unlink } from 'fs/promises';
+import { extname, join } from 'path';
 import { v4 as uuidv4 } from 'uuid';
+import { del, put } from '@vercel/blob';
 import { Product, ProductImage, SellerProfile } from '../database/entities';
 
 @Injectable()
@@ -40,6 +43,48 @@ export class UploadsService {
     }
   }
 
+  private get blobToken(): string | undefined {
+    return this.configService.get<string>('upload.blobReadWriteToken');
+  }
+
+  private async storeFile(
+    file: Express.Multer.File,
+    productId: string,
+  ): Promise<string> {
+    const filename = `${uuidv4()}${extname(file.originalname)}`;
+    const token = this.blobToken;
+
+    if (token) {
+      const blob = await put(`products/${productId}/${filename}`, file.buffer, {
+        access: 'public',
+        token,
+        contentType: file.mimetype,
+      });
+      return blob.url;
+    }
+
+    const dest = join(process.cwd(), 'uploads', 'products');
+    if (!existsSync(dest)) mkdirSync(dest, { recursive: true });
+    await writeFile(join(dest, filename), file.buffer);
+    return `/uploads/products/${filename}`;
+  }
+
+  private async removeStoredFile(imageUrl: string): Promise<void> {
+    const token = this.blobToken;
+
+    if (token && imageUrl.includes('blob.vercel-storage.com')) {
+      await del(imageUrl, { token });
+      return;
+    }
+
+    if (imageUrl.startsWith('/uploads/products/')) {
+      const filePath = join(process.cwd(), imageUrl.replace(/^\//, ''));
+      if (existsSync(filePath)) {
+        await unlink(filePath);
+      }
+    }
+  }
+
   async uploadProductImages(
     userId: string,
     productId: string,
@@ -58,8 +103,7 @@ export class UploadsService {
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       this.validateFile(file);
-      const filename = `${uuidv4()}${extname(file.originalname)}`;
-      const imageUrl = `/uploads/products/${filename}`;
+      const imageUrl = await this.storeFile(file, productId);
 
       const image = this.imageRepo.create({
         productId,
@@ -86,6 +130,7 @@ export class UploadsService {
       throw new ForbiddenException('Not authorized');
     }
 
+    await this.removeStoredFile(image.imageUrl);
     await this.imageRepo.softDelete(imageId);
     return { message: 'Image deleted' };
   }

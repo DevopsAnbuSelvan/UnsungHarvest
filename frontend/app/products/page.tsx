@@ -1,7 +1,8 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import { Search } from "lucide-react";
 import { PublicLayout } from "@/components/layout/public-layout";
 import { ProductGrid } from "@/components/product/product-grid";
@@ -11,23 +12,45 @@ import { Button } from "@/components/ui/button";
 import { Pagination } from "@/components/ui/pagination";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useProducts } from "@/hooks/useProducts";
+import { categoryService } from "@/services/category.service";
 import type { ProductFilters } from "@/types/product";
 
 function ProductsContent() {
   const searchParams = useSearchParams();
+  const categoryParam = searchParams.get("category") ?? undefined;
+
+  const { data: categories } = useQuery({
+    queryKey: ["categories"],
+    queryFn: categoryService.getAll,
+  });
+
+  const resolvedCategoryId = categoryParam
+    ? categories?.find((c) => c.id === categoryParam || c.slug === categoryParam)?.id
+    : undefined;
+
   const [filters, setFilters] = useState<ProductFilters>({
-    search: searchParams.get("q") || "",
-    categoryId: searchParams.get("category") || "",
+    search: searchParams.get("q") ?? undefined,
     sortBy: "createdAt",
     sortOrder: "desc",
     page: 1,
     limit: 12,
   });
 
+  useEffect(() => {
+    setFilters((prev) => ({
+      ...prev,
+      categoryId: resolvedCategoryId,
+      page: 1,
+    }));
+  }, [resolvedCategoryId]);
   const { data, isLoading, error, refetch } = useProducts(filters);
 
   const updateFilter = (key: keyof ProductFilters, value: string | number) => {
-    setFilters((prev) => ({ ...prev, [key]: value, page: 1 }));
+    setFilters((prev) => ({
+      ...prev,
+      [key]: value || undefined,
+      page: 1,
+    }));
   };
 
   return (
@@ -38,7 +61,7 @@ function ProductsContent() {
           <Input
             placeholder="Search products..."
             className="pl-10"
-            value={filters.search}
+            value={filters.search ?? ""}
             onChange={(e) => updateFilter("search", e.target.value)}
           />
         </div>

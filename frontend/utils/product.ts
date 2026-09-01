@@ -1,4 +1,5 @@
 import type { Product, PaginatedResponse } from "@/types/product";
+import { resolveImageUrl } from "@/lib/utils";
 
 type BackendProductImage = { imageUrl?: string; url?: string };
 type BackendSeason = { name?: string };
@@ -40,10 +41,13 @@ type BackendProduct = {
 
 function parseImages(images?: BackendProductImage[] | string[]): string[] {
   if (!images?.length) return [];
-  if (typeof images[0] === "string") return images as string[];
-  return (images as BackendProductImage[])
-    .map((img) => img.imageUrl || img.url || "")
-    .filter(Boolean);
+  const urls =
+    typeof images[0] === "string"
+      ? (images as string[])
+      : (images as BackendProductImage[])
+          .map((img) => img.imageUrl || img.url || "")
+          .filter(Boolean);
+  return urls.map((url) => resolveImageUrl(url));
 }
 
 function parseSeason(season?: BackendProduct["season"]): string[] {

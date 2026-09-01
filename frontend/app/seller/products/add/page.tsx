@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { SellerLayout } from "@/components/layout/seller-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,42 +14,70 @@ import { Select } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { sellerService } from "@/services/seller.service";
 import { categoryService } from "@/services/category.service";
+import { seasonService } from "@/services/season.service";
 import { productSchema, type ProductFormData } from "@/lib/validations";
 import { useToast } from "@/components/ui/toast-context";
 
 const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-const SEASONS = ["Summer","Monsoon","Winter","Spring","Year-round"];
 
 export default function AddProductPage() {
   const router = useRouter();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [images, setImages] = useState<File[]>([]);
-  const [selectedMonths, setSelectedMonths] = useState<number[]>([]);
-  const [selectedSeasons, setSelectedSeasons] = useState<string[]>([]);
 
   const { data: categories } = useQuery({
     queryKey: ["categories"],
     queryFn: categoryService.getAll,
   });
 
-  const { register, handleSubmit, watch, formState: { errors } } = useForm<ProductFormData>({
+  const { data: seasons } = useQuery({
+    queryKey: ["seasons"],
+    queryFn: seasonService.getAll,
+  });
+
+  const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
     defaultValues: { isGiTagged: false, season: [], availabilityMonths: [] },
   });
 
+  const selectedSeasons = watch("season") ?? [];
+  const selectedMonths = watch("availabilityMonths") ?? [];
   const isGiTagged = watch("isGiTagged");
 
+  const toggleSeason = (name: string) => {
+    const next = selectedSeasons.includes(name)
+      ? selectedSeasons.filter((x) => x !== name)
+      : [...selectedSeasons, name];
+    setValue("season", next, { shouldValidate: true });
+  };
+
+  const toggleMonth = (month: number) => {
+    const next = selectedMonths.includes(month)
+      ? selectedMonths.filter((x) => x !== month)
+      : [...selectedMonths, month];
+    setValue("availabilityMonths", next);
+  };
+
   const createProduct = useMutation({
-    mutationFn: (data: ProductFormData) =>
-      sellerService.createProduct(
-        { ...data, season: selectedSeasons, availabilityMonths: selectedMonths },
+    mutationFn: (data: ProductFormData) => {
+      const seasonId = seasons?.find((s) => s.name === data.season[0])?.id;
+      return sellerService.createProduct(
+        { ...data, seasonId },
         images
-      ),
+      );
+    },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["seller-products"] });
       toast({ title: "Product created!", type: "success" });
       router.push("/seller/products");
     },
-    onError: () => toast({ title: "Failed to create product", type: "error" }),
+    onError: (err: unknown) => {
+      const message =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
+        "Failed to create product";
+      toast({ title: message, type: "error" });
+    },
   });
 
   return (
@@ -75,11 +103,13 @@ export default function AddProductPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Price (₹)</Label>
-                <Input type="number" {...register("price")} />
+                <Input type="number" step="0.01" {...register("price")} />
+                {errors.price && <p className="text-xs text-destructive">{errors.price.message}</p>}
               </div>
               <div className="space-y-2">
                 <Label>Stock</Label>
                 <Input type="number" {...register("stock")} />
+                {errors.stock && <p className="text-xs text-destructive">{errors.stock.message}</p>}
               </div>
             </div>
             <div className="space-y-2">
@@ -90,26 +120,24 @@ export default function AddProductPage() {
                   <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
               </Select>
+              {errors.categoryId && <p className="text-xs text-destructive">{errors.categoryId.message}</p>}
             </div>
             <div className="space-y-2">
               <Label>Season</Label>
               <div className="flex flex-wrap gap-2">
-                {SEASONS.map((s) => (
+                {seasons?.map((s) => (
                   <Button
-                    key={s}
+                    key={s.id}
                     type="button"
                     size="sm"
-                    variant={selectedSeasons.includes(s) ? "default" : "outline"}
-                    onClick={() =>
-                      setSelectedSeasons((prev) =>
-                        prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]
-                      )
-                    }
+                    variant={selectedSeasons.includes(s.name) ? "default" : "outline"}
+                    onClick={() => toggleSeason(s.name)}
                   >
-                    {s}
+                    {s.name}
                   </Button>
                 ))}
               </div>
+              {errors.season && <p className="text-xs text-destructive">{errors.season.message}</p>}
             </div>
             <div className="space-y-2">
               <Label>Availability Months</Label>
@@ -120,11 +148,7 @@ export default function AddProductPage() {
                     type="button"
                     size="sm"
                     variant={selectedMonths.includes(i + 1) ? "default" : "outline"}
-                    onClick={() =>
-                      setSelectedMonths((prev) =>
-                        prev.includes(i + 1) ? prev.filter((x) => x !== i + 1) : [...prev, i + 1]
-                      )
-                    }
+                    onClick={() => toggleMonth(i + 1)}
                   >
                     {m}
                   </Button>

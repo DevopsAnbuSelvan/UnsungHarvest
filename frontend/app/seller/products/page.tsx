@@ -40,6 +40,13 @@ export default function SellerProductsPage() {
         </Link>
       </div>
       {isLoading && <Skeleton className="h-64 rounded-2xl" />}
+      {!isLoading && data?.data.length === 0 && (
+        <Card>
+          <CardContent className="p-8 text-center text-muted-foreground">
+            No products yet. Add your first product to get started.
+          </CardContent>
+        </Card>
+      )}
       <div className="space-y-4">
         {data?.data.map((product) => (
           <Card key={product.id}>

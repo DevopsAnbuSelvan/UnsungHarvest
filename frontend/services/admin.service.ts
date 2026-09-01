@@ -14,6 +14,11 @@ import type { NutritionInfo } from "@/types/product";
 import type { Location } from "@/types/product";
 import type { PaginatedResponse } from "@/types/product";
 import type { User } from "@/types/auth";
+import {
+  mapPendingProductList,
+  mapSellerList,
+  toBackendApprovalStatus,
+} from "@/utils/admin";
 
 export const adminService = {
   getDashboard: async (): Promise<AdminDashboardStats> => {
@@ -24,21 +29,23 @@ export const adminService = {
   },
 
   getSellers: async (
-    status?: string
+    status?: string,
+    page = 1
   ): Promise<PaginatedResponse<SellerWithStatus>> => {
-    const { data } = await api.get<PaginatedResponse<SellerWithStatus>>(
-      API_ENDPOINTS.admin.sellers,
-      { params: { status } }
-    );
-    return data;
+    const { data } = await api.post(API_ENDPOINTS.sellers.list, {
+      page,
+      limit: 10,
+      status: toBackendApprovalStatus(status),
+    });
+    return mapSellerList(data as Parameters<typeof mapSellerList>[0]);
   },
 
   approveSeller: async (id: string): Promise<void> => {
-    await api.patch(API_ENDPOINTS.admin.approveSeller(id));
+    await api.post(API_ENDPOINTS.sellers.approve, { id });
   },
 
   rejectSeller: async (id: string, reason?: string): Promise<void> => {
-    await api.patch(API_ENDPOINTS.admin.rejectSeller(id), { reason });
+    await api.post(API_ENDPOINTS.sellers.reject, { id, rejectionReason: reason });
   },
 
   getBuyers: async (): Promise<PaginatedResponse<User>> => {
@@ -49,21 +56,25 @@ export const adminService = {
   },
 
   getProducts: async (
-    status?: string
+    status?: string,
+    page = 1
   ): Promise<PaginatedResponse<PendingProduct>> => {
-    const { data } = await api.get<PaginatedResponse<PendingProduct>>(
-      API_ENDPOINTS.admin.products,
-      { params: { status } }
-    );
-    return data;
+    const { data } = await api.post(API_ENDPOINTS.products.list, {
+      page,
+      limit: 10,
+      status: toBackendApprovalStatus(status),
+      sortBy: "createdAt",
+      sortOrder: "DESC",
+    });
+    return mapPendingProductList(data as Parameters<typeof mapPendingProductList>[0]);
   },
 
   approveProduct: async (id: string): Promise<void> => {
-    await api.patch(API_ENDPOINTS.admin.approveProduct(id));
+    await api.post(API_ENDPOINTS.products.approve, { id });
   },
 
   rejectProduct: async (id: string, reason?: string): Promise<void> => {
-    await api.patch(API_ENDPOINTS.admin.rejectProduct(id), { reason });
+    await api.post(API_ENDPOINTS.products.reject, { id, rejectionReason: reason });
   },
 
   getCategories: async (): Promise<Category[]> => {

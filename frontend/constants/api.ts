@@ -1,6 +1,10 @@
 export const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api/v1";
 
+export const UPLOAD_BASE_URL =
+  process.env.NEXT_PUBLIC_UPLOAD_URL ||
+  API_BASE_URL.replace(/\/api\/v\d+\/?$/, "");
+
 export const API_ENDPOINTS = {
   auth: {
     login: "/auth/login",
@@ -17,9 +21,34 @@ export const API_ENDPOINTS = {
     giTagged: "/products/gi-tagged",
     get: "/products/get",
     search: "/products/list",
+    create: "/products/create",
+    update: "/products/update",
+    delete: "/products/delete",
+    approve: "/products/approve",
+    reject: "/products/reject",
   },
-  categories: "/categories",
-  nutrition: "/nutrition",
+  season: {
+    list: "/season/list",
+    get: "/season/get",
+  },
+  uploads: {
+    productImages: "/uploads/product-images",
+  },
+  categories: {
+    list: "/categories/list",
+    get: "/categories/get",
+  },
+  nutrition: {
+    list: "/nutrition/list",
+    get: "/nutrition/get",
+  },
+  sellers: {
+    profileGet: "/sellers/profile/get",
+    profileUpdate: "/sellers/profile/update",
+    list: "/sellers/list",
+    approve: "/sellers/approve",
+    reject: "/sellers/reject",
+  },
   locations: "/locations",
   cart: "/cart",
   wishlist: "/wishlist",
