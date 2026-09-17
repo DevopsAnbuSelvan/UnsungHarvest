@@ -1,5 +1,5 @@
 import api from "@/lib/axios";
-import { API_ENDPOINTS } from "@/constants/api";
+import { EndPoints } from "@/constants/end_points";
 
 export interface Season {
   id: string;
@@ -16,7 +16,7 @@ interface SeasonListResponse {
 export const seasonService = {
   getAll: async (): Promise<Season[]> => {
     const { data } = await api.post<SeasonListResponse>(
-      API_ENDPOINTS.season.list,
+      EndPoints.seasonList,
       { limit: 100 }
     );
     return data.items ?? [];

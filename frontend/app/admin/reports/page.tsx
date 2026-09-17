@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { AdminLayout } from "@/components/layout/admin-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatCard } from "@/components/common/stat-card";
-import { adminService } from "@/services/admin.service";
+import { adminService } from "@/services/admin";
 import { formatCurrency } from "@/lib/utils";
 import { DollarSign, ShoppingBag } from "lucide-react";
 

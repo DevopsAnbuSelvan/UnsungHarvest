@@ -1,5 +1,5 @@
 import api from "@/lib/axios";
-import { API_ENDPOINTS } from "@/constants/api";
+import { EndPoints } from "@/constants/end_points";
 import {
   mapPaginatedProducts,
   mapProduct,
@@ -23,7 +23,7 @@ export const productService = {
   getAll: async (
     filters?: ProductFilters
   ): Promise<PaginatedResponse<Product>> => {
-    const { data } = await api.post(API_ENDPOINTS.products.list, {
+    const { data } = await api.post(EndPoints.productsList, {
       page: filters?.page ?? 1,
       limit: filters?.limit ?? LIST_LIMIT,
       ...(filters?.search ? { search: filters.search } : {}),
@@ -36,42 +36,50 @@ export const productService = {
   },
 
   getFeatured: async (): Promise<Product[]> => {
-    return fetchProductList(API_ENDPOINTS.products.featured);
+    return fetchProductList(EndPoints.productsFeatured);
   },
 
   getTrending: async (): Promise<Product[]> => {
-    return fetchProductList(API_ENDPOINTS.products.trending);
+    return fetchProductList(EndPoints.productsTrending);
   },
 
   getRecent: async (): Promise<Product[]> => {
-    return fetchProductList(API_ENDPOINTS.products.recent);
+    return fetchProductList(EndPoints.productsRecent);
   },
 
   getSeasonal: async (): Promise<Product[]> => {
-    return fetchProductList(API_ENDPOINTS.products.seasonal);
+    return fetchProductList(EndPoints.productsSeasonal);
   },
 
   getGiTagged: async (): Promise<Product[]> => {
-    return fetchProductList(API_ENDPOINTS.products.giTagged);
+    return fetchProductList(EndPoints.productsGiTagged);
   },
 
   getById: async (id: string): Promise<Product> => {
-    const { data } = await api.post(API_ENDPOINTS.products.get, { id });
+    const { data } = await api.post(EndPoints.productsGet, { id });
     return mapProduct(data as Parameters<typeof mapProduct>[0]);
   },
 
-  getReviews: async (id: string): Promise<Review[]> => {
-    const { data } = await api.get<Review[]>(`/products/${id}/reviews`);
-    return data;
+  getReviews: async (_id: string): Promise<Review[]> => {
+    // Reviews endpoint not implemented — return empty until products_reviews_api exists
+    return [];
   },
 
   getRelated: async (id: string): Promise<Product[]> => {
-    const { data } = await api.get<Product[]>(`/products/${id}/related`);
-    return mapProductList((data as Parameters<typeof mapProductList>[0]) ?? []);
+    const product = await productService.getById(id);
+    const { data } = await api.post(EndPoints.productsList, {
+      categoryId: product.categoryId,
+      limit: 8,
+      status: "approved",
+    });
+    const paginated = mapPaginatedProducts(
+      data as Parameters<typeof mapPaginatedProducts>[0]
+    );
+    return paginated.data.filter((p) => p.id !== id);
   },
 
   search: async (query: string): Promise<Product[]> => {
-    const { data } = await api.post(API_ENDPOINTS.products.search, {
+    const { data } = await api.post(EndPoints.productsList, {
       search: query,
       limit: LIST_LIMIT,
       status: "approved",

@@ -11,16 +11,21 @@ const PUBLIC_PATHS = [
   "/register",
 ];
 
-const ROLE_PATHS: Record<string, string> = {
-  BUYER: "/buyer",
-  SELLER: "/seller",
-  SUPER_COLD_ADMIN: "/admin",
-};
+function isAdminPanelRole(role: string | null): boolean {
+  return role === "ADMIN" || role === "SUPER_COLD_ADMIN";
+}
 
 function isPublicPath(pathname: string): boolean {
   if (PUBLIC_PATHS.includes(pathname)) return true;
   if (pathname.startsWith("/products/")) return true;
   return false;
+}
+
+function dashboardForRole(role: string | null): string {
+  if (role === "SELLER") return "/seller/dashboard";
+  if (role === "SUPER_COLD_ADMIN") return "/super-cold-admin/dashboard";
+  if (role === "ADMIN") return "/admin/dashboard";
+  return "/buyer/dashboard";
 }
 
 export function middleware(request: NextRequest) {
@@ -32,11 +37,18 @@ export function middleware(request: NextRequest) {
 
   if (token) {
     try {
-      const parsed = JSON.parse(token);
+      const decoded = decodeURIComponent(token);
+      const parsed = JSON.parse(decoded);
       isAuthenticated = !!parsed?.state?.accessToken;
       userRole = parsed?.state?.user?.role || null;
     } catch {
-      isAuthenticated = false;
+      try {
+        const parsed = JSON.parse(token);
+        isAuthenticated = !!parsed?.state?.accessToken;
+        userRole = parsed?.state?.user?.role || null;
+      } catch {
+        isAuthenticated = false;
+      }
     }
   }
 
@@ -45,13 +57,9 @@ export function middleware(request: NextRequest) {
       isAuthenticated &&
       (pathname === "/login" || pathname === "/register")
     ) {
-      const dashboard =
-        userRole === "SELLER"
-          ? "/seller/dashboard"
-          : userRole === "SUPER_COLD_ADMIN"
-            ? "/admin/dashboard"
-            : "/buyer/dashboard";
-      return NextResponse.redirect(new URL(dashboard, request.url));
+      return NextResponse.redirect(
+        new URL(dashboardForRole(userRole), request.url)
+      );
     }
     return NextResponse.next();
   }
@@ -68,7 +76,17 @@ export function middleware(request: NextRequest) {
   if (pathname.startsWith("/seller") && userRole !== "SELLER") {
     return NextResponse.redirect(new URL("/login", request.url));
   }
-  if (pathname.startsWith("/admin") && userRole !== "SUPER_COLD_ADMIN") {
+
+  if (pathname.startsWith("/super-cold-admin")) {
+    if (userRole !== "SUPER_COLD_ADMIN") {
+      return NextResponse.redirect(
+        new URL(dashboardForRole(userRole), request.url)
+      );
+    }
+    return NextResponse.next();
+  }
+
+  if (pathname.startsWith("/admin") && !isAdminPanelRole(userRole)) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 

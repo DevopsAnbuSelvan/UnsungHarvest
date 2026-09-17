@@ -9,12 +9,12 @@ import { UserRole } from '../common/enums';
 @ApiTags('Dashboard')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.SUPER_COLD_ADMIN)
-@Controller('dashboard')
+@Roles(UserRole.ADMIN, UserRole.SUPER_COLD_ADMIN)
+@Controller()
 export class DashboardController {
   constructor(private readonly dashboardService: DashboardService) {}
 
-  @Post('stats')
+  @Post('dashboard_stats_api')
   @ApiOperation({ summary: 'Get admin dashboard statistics' })
   getStats() {
     return this.dashboardService.getStats();

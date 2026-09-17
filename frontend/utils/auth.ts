@@ -1,6 +1,5 @@
 import type {
   AuthResponse,
-  LoginPayload,
   RegisterPayload,
   User,
   UserRole,
@@ -19,6 +18,7 @@ type BackendUser = {
 const ROLE_MAP: Record<string, UserRole> = {
   buyer: "BUYER",
   seller: "SELLER",
+  admin: "ADMIN",
   super_cold_admin: "SUPER_COLD_ADMIN",
 };
 
@@ -33,7 +33,7 @@ export function mapUser(raw: BackendUser): User {
     lastName: parts.slice(1).join(" ") || "",
     role: ROLE_MAP[raw.role ?? ""] ?? "BUYER",
     phone: raw.phone,
-    isActive: raw.status === "active",
+    isActive: raw.status === "active" || !raw.status,
     createdAt: raw.createdAt || new Date().toISOString(),
   };
 }
@@ -52,19 +52,10 @@ export function mapAuthResponse(raw: {
 export function toRegisterBody(payload: RegisterPayload) {
   return {
     name: `${payload.firstName} ${payload.lastName}`.trim(),
-    email: payload.email,
-    password: payload.password,
     phone: payload.phone,
     role: payload.role.toLowerCase(),
     ...(payload.role === "SELLER"
       ? { businessName: `${payload.firstName} ${payload.lastName}`.trim() }
       : {}),
-  };
-}
-
-export function toLoginBody(payload: LoginPayload) {
-  return {
-    email: payload.email,
-    password: payload.password,
   };
 }

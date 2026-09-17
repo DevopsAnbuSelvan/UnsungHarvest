@@ -7,17 +7,18 @@ import { WinstonModule } from 'nest-winston';
 
 import appConfig from './config/app.config';
 import databaseConfig from './config/database.config';
-import jwtConfig from './config/jwt.config';
+import firebaseConfig from './config/firebase.config';
 import uploadConfig from './config/upload.config';
 import throttleConfig from './config/throttle.config';
 
 import { DatabaseModule } from './database/database.module';
 import { typeOrmConfigFactory } from './database/typeorm.config';
+import { FirebaseModule } from './firebase/firebase.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { BuyersModule } from './buyers/buyers.module';
 import { SellersModule } from './sellers/sellers.module';
-import { AdminsModule } from './admins/admins.module';
+import { AdminModule } from './admin/admin.module';
 import { ProductsModule } from './products/products.module';
 import { CategoriesModule } from './categories/categories.module';
 import { OrdersModule } from './orders/orders.module';
@@ -28,6 +29,7 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { SeasonModule } from './season/season.module';
 import { NutritionModule } from './nutrition/nutrition.module';
 import { LocationsModule } from './locations/locations.module';
+import { FarmersModule } from './farmers/farmers.module';
 import { UploadsModule } from './uploads/uploads.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { ReportsModule } from './reports/reports.module';
@@ -45,7 +47,13 @@ import { WinstonConfigService } from './common/logger/winston.config';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [appConfig, databaseConfig, jwtConfig, uploadConfig, throttleConfig],
+      load: [
+        appConfig,
+        databaseConfig,
+        firebaseConfig,
+        uploadConfig,
+        throttleConfig,
+      ],
       envFilePath: ['.env'],
     }),
     WinstonModule.forRootAsync({
@@ -69,11 +77,12 @@ import { WinstonConfigService } from './common/logger/winston.config';
       ],
     }),
     DatabaseModule,
+    FirebaseModule,
     AuthModule,
     UsersModule,
     BuyersModule,
     SellersModule,
-    AdminsModule,
+    AdminModule,
     ProductsModule,
     CategoriesModule,
     OrdersModule,
@@ -84,6 +93,7 @@ import { WinstonConfigService } from './common/logger/winston.config';
     SeasonModule,
     NutritionModule,
     LocationsModule,
+    FarmersModule,
     UploadsModule,
     DashboardModule,
     ReportsModule,

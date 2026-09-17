@@ -7,6 +7,7 @@ import { ProductImage } from './product-image.entity';
 import { NutritionInformation } from './nutrition-information.entity';
 import { Season } from './season.entity';
 import { CultivationLocation } from './cultivation-location.entity';
+import { Farmer } from './farmer.entity';
 import { OrderItem } from './order-item.entity';
 import { Cart } from './cart.entity';
 import { Wishlist } from './wishlist.entity';
@@ -74,6 +75,13 @@ export class Product extends BaseEntity {
   @ManyToOne(() => CultivationLocation, { nullable: true })
   @JoinColumn({ name: 'cultivation_location_id' })
   cultivationLocation: CultivationLocation;
+
+  @Column({ name: 'farmer_id', type: 'uuid', nullable: true })
+  farmerId: string | null;
+
+  @ManyToOne(() => Farmer, (farmer) => farmer.products, { nullable: true })
+  @JoinColumn({ name: 'farmer_id' })
+  farmer: Farmer;
 
   @Column({ type: 'decimal', precision: 10, scale: 7, nullable: true })
   latitude: number;

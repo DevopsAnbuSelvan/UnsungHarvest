@@ -20,12 +20,12 @@ import { UserRole } from '../common/enums';
 @ApiTags('Uploads')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.SELLER)
-@Controller('uploads')
+@Roles(UserRole.SELLER, UserRole.ADMIN, UserRole.SUPER_COLD_ADMIN)
+@Controller()
 export class UploadsController {
   constructor(private readonly uploadsService: UploadsService) {}
 
-  @Post('product-images')
+  @Post('uploads_product_images_api')
   @ApiOperation({ summary: 'Upload product images (max 5)' })
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(
@@ -35,18 +35,25 @@ export class UploadsController {
   )
   uploadProductImages(
     @CurrentUser('sub') userId: string,
+    @CurrentUser('role') role: string,
     @Body() dto: UploadProductImagesDto,
     @UploadedFiles() files: Express.Multer.File[],
   ) {
-    return this.uploadsService.uploadProductImages(userId, dto.productId, files);
+    return this.uploadsService.uploadProductImages(
+      userId,
+      dto.productId,
+      files,
+      role,
+    );
   }
 
-  @Post('delete-image')
+  @Post('uploads_delete_image_api')
   @ApiOperation({ summary: 'Delete product image' })
   deleteImage(
     @CurrentUser('sub') userId: string,
+    @CurrentUser('role') role: string,
     @Body() dto: DeleteImageDto,
   ) {
-    return this.uploadsService.deleteImage(userId, dto.imageId);
+    return this.uploadsService.deleteImage(userId, dto.imageId, role);
   }
 }

@@ -16,12 +16,12 @@ import { UserRole } from '../common/enums';
 @ApiTags('Orders')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Controller('orders')
+@Controller()
 export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}
 
   @Roles(UserRole.BUYER)
-  @Post('create')
+  @Post('orders_create_api')
   @ApiOperation({ summary: 'Create order from cart items' })
   create(
     @CurrentUser('sub') userId: string,
@@ -31,7 +31,7 @@ export class OrdersController {
   }
 
   @Roles(UserRole.BUYER)
-  @Post('my-orders')
+  @Post('orders_my_orders_api')
   @ApiOperation({ summary: 'List buyer orders' })
   myOrders(
     @CurrentUser('sub') userId: string,
@@ -40,21 +40,21 @@ export class OrdersController {
     return this.ordersService.listForBuyer(userId, dto);
   }
 
-  @Roles(UserRole.SUPER_COLD_ADMIN)
-  @Post('list')
+  @Roles(UserRole.ADMIN, UserRole.SUPER_COLD_ADMIN)
+  @Post('orders_list_api')
   @ApiOperation({ summary: 'List all orders (admin)' })
   listAll(@Body() dto: ListOrdersDto) {
     return this.ordersService.listAll(dto);
   }
 
-  @Post('get')
+  @Post('orders_get_api')
   @ApiOperation({ summary: 'Get order by ID' })
   getById(@Body() dto: OrderIdDto) {
     return this.ordersService.getById(dto.id);
   }
 
-  @Roles(UserRole.SUPER_COLD_ADMIN)
-  @Post('update-status')
+  @Roles(UserRole.ADMIN, UserRole.SUPER_COLD_ADMIN)
+  @Post('orders_update_status_api')
   @ApiOperation({ summary: 'Update order status (admin)' })
   updateStatus(@Body() dto: UpdateOrderStatusDto) {
     return this.ordersService.updateStatus(dto);

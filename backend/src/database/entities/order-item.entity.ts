@@ -32,4 +32,37 @@ export class OrderItem extends BaseEntity {
 
   @Column({ name: 'total_price', type: 'decimal', precision: 12, scale: 2 })
   totalPrice: number;
+
+  @Column({ name: 'farmer_id', type: 'uuid', nullable: true })
+  farmerId: string | null;
+
+  @Column({ name: 'seller_id', type: 'uuid', nullable: true })
+  sellerId: string | null;
+
+  @Column({
+    name: 'commission_percent',
+    type: 'decimal',
+    precision: 5,
+    scale: 2,
+    default: 5,
+  })
+  commissionPercent: number;
+
+  @Column({
+    name: 'student_commission_amount',
+    type: 'decimal',
+    precision: 12,
+    scale: 2,
+    default: 0,
+  })
+  studentCommissionAmount: number;
+
+  @Column({
+    name: 'farmer_amount',
+    type: 'decimal',
+    precision: 12,
+    scale: 2,
+    default: 0,
+  })
+  farmerAmount: number;
 }

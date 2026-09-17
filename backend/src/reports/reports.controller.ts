@@ -10,24 +10,24 @@ import { UserRole } from '../common/enums';
 @ApiTags('Reports')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.SUPER_COLD_ADMIN)
-@Controller('reports')
+@Roles(UserRole.ADMIN, UserRole.SUPER_COLD_ADMIN)
+@Controller()
 export class ReportsController {
   constructor(private readonly reportsService: ReportsService) {}
 
-  @Post('sales')
+  @Post('reports_sales_api')
   @ApiOperation({ summary: 'Generate sales report' })
   salesReport(@Body() dto: SalesReportDto) {
     return this.reportsService.salesReport(dto);
   }
 
-  @Post('top-products')
+  @Post('reports_top_products_api')
   @ApiOperation({ summary: 'Get top selling products' })
   topProducts() {
     return this.reportsService.topProducts();
   }
 
-  @Post('analytics')
+  @Post('reports_analytics_api')
   @ApiOperation({ summary: 'Get platform analytics' })
   analytics(@Body() dto: AnalyticsDto) {
     return this.reportsService.analytics(dto);

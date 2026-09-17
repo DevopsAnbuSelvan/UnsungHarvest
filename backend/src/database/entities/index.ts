@@ -9,6 +9,7 @@ export { ProductImage } from './product-image.entity';
 export { NutritionInformation } from './nutrition-information.entity';
 export { Season } from './season.entity';
 export { CultivationLocation } from './cultivation-location.entity';
+export { Farmer } from './farmer.entity';
 export { Order } from './order.entity';
 export { OrderItem } from './order-item.entity';
 export { Cart } from './cart.entity';

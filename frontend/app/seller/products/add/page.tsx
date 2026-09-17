@@ -15,8 +15,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { sellerService } from "@/services/seller.service";
 import { categoryService } from "@/services/category.service";
 import { seasonService } from "@/services/season.service";
+import { farmerService } from "@/services/farmer.service";
 import { productSchema, type ProductFormData } from "@/lib/validations";
 import { useToast } from "@/components/ui/toast-context";
+import Link from "next/link";
 
 const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
@@ -36,9 +38,14 @@ export default function AddProductPage() {
     queryFn: seasonService.getAll,
   });
 
+  const { data: farmers = [] } = useQuery({
+    queryKey: ["seller-farmers"],
+    queryFn: () => farmerService.list(),
+  });
+
   const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
-    defaultValues: { isGiTagged: false, season: [], availabilityMonths: [] },
+    defaultValues: { isGiTagged: false, season: [], availabilityMonths: [], farmerId: "" },
   });
 
   const selectedSeasons = watch("season") ?? [];
@@ -111,6 +118,31 @@ export default function AddProductPage() {
                 <Input type="number" {...register("stock")} />
                 {errors.stock && <p className="text-xs text-destructive">{errors.stock.message}</p>}
               </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Farmer *</Label>
+              {farmers.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  No farmers yet.{" "}
+                  <Link href="/seller/farmers" className="text-primary underline">
+                    Add a farmer
+                  </Link>{" "}
+                  first (you earn 5% of each sale).
+                </p>
+              ) : (
+                <Select {...register("farmerId")}>
+                  <option value="">Select farmer</option>
+                  {farmers.map((f) => (
+                    <option key={f.id} value={f.id}>
+                      {f.name}
+                      {f.village ? ` — ${f.village}` : ""}
+                    </option>
+                  ))}
+                </Select>
+              )}
+              {errors.farmerId && (
+                <p className="text-xs text-destructive">{errors.farmerId.message}</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label>Category</Label>

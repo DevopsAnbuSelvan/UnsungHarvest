@@ -12,11 +12,11 @@ import { CurrentUser } from '../common/decorators/current-user.decorator';
 @ApiTags('Notifications')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
-@Controller('notifications')
+@Controller()
 export class NotificationsController {
   constructor(private readonly notificationsService: NotificationsService) {}
 
-  @Post('list')
+  @Post('notifications_list_api')
   @ApiOperation({ summary: 'List user notifications' })
   list(
     @CurrentUser('sub') userId: string,
@@ -25,7 +25,7 @@ export class NotificationsController {
     return this.notificationsService.list(userId, dto);
   }
 
-  @Post('mark-read')
+  @Post('notifications_mark_read_api')
   @ApiOperation({ summary: 'Mark notification as read' })
   markAsRead(
     @CurrentUser('sub') userId: string,
@@ -34,7 +34,7 @@ export class NotificationsController {
     return this.notificationsService.markAsRead(userId, dto.id);
   }
 
-  @Post('mark-all-read')
+  @Post('notifications_mark_all_read_api')
   @ApiOperation({ summary: 'Mark all notifications as read' })
   markAllAsRead(@CurrentUser('sub') userId: string) {
     return this.notificationsService.markAllAsRead(userId);

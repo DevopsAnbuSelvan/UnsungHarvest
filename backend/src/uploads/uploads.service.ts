@@ -13,6 +13,7 @@ import { extname, join } from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import { del, put } from '@vercel/blob';
 import { Product, ProductImage, SellerProfile } from '../database/entities';
+import { isStaffRole } from '../common/enums';
 
 @Injectable()
 export class UploadsService {
@@ -28,7 +29,13 @@ export class UploadsService {
 
   validateFile(file: Express.Multer.File) {
     const maxSize = this.configService.get<number>('upload.maxSize') || 5242880;
-    const allowedExtensions = this.configService.get<string[]>('upload.allowedExtensions') || ['jpg', 'jpeg', 'png', 'webp'];
+    const allowedExtensions =
+      this.configService.get<string[]>('upload.allowedExtensions') || [
+        'jpg',
+        'jpeg',
+        'png',
+        'webp',
+      ];
 
     if (!file) throw new BadRequestException('No file uploaded');
     if (file.size > maxSize) {
@@ -85,21 +92,37 @@ export class UploadsService {
     }
   }
 
+  private async assertCanManageProduct(
+    userId: string,
+    product: Product,
+    role?: string,
+  ) {
+    if (isStaffRole(role)) return;
+
+    const seller = await this.sellerRepo.findOne({ where: { userId } });
+    if (!seller) throw new ForbiddenException('Seller profile required');
+    if (product.sellerId !== seller.id) {
+      throw new ForbiddenException('Not authorized');
+    }
+  }
+
   async uploadProductImages(
     userId: string,
     productId: string,
     files: Express.Multer.File[],
+    role?: string,
   ) {
-    const seller = await this.sellerRepo.findOne({ where: { userId } });
-    if (!seller) throw new ForbiddenException('Seller profile required');
+    if (!files?.length) {
+      throw new BadRequestException('No files uploaded');
+    }
 
     const product = await this.productRepo.findOne({ where: { id: productId } });
     if (!product) throw new NotFoundException('Product not found');
-    if (product.sellerId !== seller.id) {
-      throw new ForbiddenException('Not authorized');
-    }
+    await this.assertCanManageProduct(userId, product, role);
 
+    const existingCount = await this.imageRepo.count({ where: { productId } });
     const images: ProductImage[] = [];
+
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       this.validateFile(file);
@@ -108,8 +131,8 @@ export class UploadsService {
       const image = this.imageRepo.create({
         productId,
         imageUrl,
-        isPrimary: i === 0,
-        sortOrder: i,
+        isPrimary: existingCount === 0 && i === 0,
+        sortOrder: existingCount + i,
       });
       images.push(await this.imageRepo.save(image));
     }
@@ -117,18 +140,13 @@ export class UploadsService {
     return images;
   }
 
-  async deleteImage(userId: string, imageId: string) {
-    const seller = await this.sellerRepo.findOne({ where: { userId } });
-    if (!seller) throw new ForbiddenException('Seller profile required');
-
+  async deleteImage(userId: string, imageId: string, role?: string) {
     const image = await this.imageRepo.findOne({
       where: { id: imageId },
       relations: ['product'],
     });
     if (!image) throw new NotFoundException('Image not found');
-    if (image.product.sellerId !== seller.id) {
-      throw new ForbiddenException('Not authorized');
-    }
+    await this.assertCanManageProduct(userId, image.product, role);
 
     await this.removeStoredFile(image.imageUrl);
     await this.imageRepo.softDelete(imageId);

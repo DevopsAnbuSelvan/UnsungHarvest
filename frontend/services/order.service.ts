@@ -1,34 +1,29 @@
 import api from "@/lib/axios";
-import { API_ENDPOINTS } from "@/constants/api";
+import { EndPoints } from "@/constants/end_points";
 import type { CheckoutPayload, Order } from "@/types/order";
 import type { PaginatedResponse } from "@/types/product";
 
 export const orderService = {
   getAll: async (page = 1): Promise<PaginatedResponse<Order>> => {
-    const { data } = await api.get<PaginatedResponse<Order>>(
-      API_ENDPOINTS.orders,
-      { params: { page } }
-    );
+    const { data } = await api.post(EndPoints.ordersMyOrders, { page });
     return data;
   },
 
   getById: async (id: string): Promise<Order> => {
-    const { data } = await api.get<Order>(`${API_ENDPOINTS.orders}/${id}`);
-    return data;
+    const { data } = await api.post(EndPoints.ordersGet, { id });
+    return data as Order;
   },
 
   checkout: async (payload: CheckoutPayload): Promise<Order> => {
-    const { data } = await api.post<Order>(
-      `${API_ENDPOINTS.orders}/checkout`,
-      payload
-    );
+    const { data } = await api.post<Order>(EndPoints.ordersCreate, payload);
     return data;
   },
 
   cancel: async (id: string): Promise<Order> => {
-    const { data } = await api.patch<Order>(
-      `${API_ENDPOINTS.orders}/${id}/cancel`
-    );
-    return data;
+    const { data } = await api.post(EndPoints.ordersUpdateStatus, {
+      id,
+      status: "cancelled",
+    });
+    return data as Order;
   },
 };

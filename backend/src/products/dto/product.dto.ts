@@ -64,6 +64,19 @@ export class CreateProductDto {
   @IsUUID()
   cultivationLocationId?: string;
 
+  @ApiPropertyOptional({ format: 'uuid', description: 'Farmer who grew this harvest' })
+  @IsOptional()
+  @IsUUID()
+  farmerId?: string;
+
+  @ApiPropertyOptional({
+    format: 'uuid',
+    description: 'Seller profile ID (required when creating as super_cold_admin)',
+  })
+  @IsOptional()
+  @IsUUID()
+  sellerId?: string;
+
   @ApiPropertyOptional()
   @IsOptional()
   @Type(() => Number)

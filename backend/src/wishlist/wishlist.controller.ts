@@ -12,11 +12,11 @@ import { UserRole } from '../common/enums';
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(UserRole.BUYER)
-@Controller('wishlist')
+@Controller()
 export class WishlistController {
   constructor(private readonly wishlistService: WishlistService) {}
 
-  @Post('list')
+  @Post('wishlist_list_api')
   @ApiOperation({ summary: 'List wishlist items' })
   list(
     @CurrentUser('sub') userId: string,
@@ -25,7 +25,7 @@ export class WishlistController {
     return this.wishlistService.list(userId, dto);
   }
 
-  @Post('add')
+  @Post('wishlist_add_api')
   @ApiOperation({ summary: 'Add product to wishlist' })
   add(
     @CurrentUser('sub') userId: string,
@@ -34,7 +34,7 @@ export class WishlistController {
     return this.wishlistService.add(userId, dto);
   }
 
-  @Post('remove')
+  @Post('wishlist_remove_api')
   @ApiOperation({ summary: 'Remove from wishlist' })
   remove(
     @CurrentUser('sub') userId: string,

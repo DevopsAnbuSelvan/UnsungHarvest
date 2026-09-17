@@ -1,29 +1,30 @@
 import api from "@/lib/axios";
-import { API_ENDPOINTS } from "@/constants/api";
+import { EndPoints } from "@/constants/end_points";
 import type { WishlistItem } from "@/types/cart";
 
 export const wishlistService = {
   getAll: async (): Promise<WishlistItem[]> => {
-    const { data } = await api.get<WishlistItem[]>(API_ENDPOINTS.wishlist);
-    return data;
+    const { data } = await api.post(EndPoints.wishlistList);
+    return (data as WishlistItem[]) ?? [];
   },
 
   add: async (productId: string): Promise<WishlistItem> => {
-    const { data } = await api.post<WishlistItem>(API_ENDPOINTS.wishlist, {
-      productId,
-    });
-    return data;
+    const { data } = await api.post(EndPoints.wishlistAdd, { productId });
+    return data as WishlistItem;
   },
 
   remove: async (productId: string): Promise<void> => {
-    await api.delete(`${API_ENDPOINTS.wishlist}/${productId}`);
+    await api.post(EndPoints.wishlistRemove, { productId });
   },
 
   toggle: async (productId: string): Promise<{ added: boolean }> => {
-    const { data } = await api.post<{ added: boolean }>(
-      `${API_ENDPOINTS.wishlist}/toggle`,
-      { productId }
-    );
-    return data;
+    const list = await wishlistService.getAll();
+    const exists = list.some((item) => item.productId === productId);
+    if (exists) {
+      await wishlistService.remove(productId);
+      return { added: false };
+    }
+    await wishlistService.add(productId);
+    return { added: true };
   },
 };

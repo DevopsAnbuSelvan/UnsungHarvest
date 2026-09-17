@@ -1,27 +1,23 @@
 import api from "@/lib/axios";
-import { API_ENDPOINTS } from "@/constants/api";
+import { EndPoints } from "@/constants/end_points";
 import type { Notification } from "@/types/notification";
 
 export const notificationService = {
   getAll: async (): Promise<Notification[]> => {
-    const { data } = await api.get<Notification[]>(
-      API_ENDPOINTS.notifications
-    );
-    return data;
+    const { data } = await api.post(EndPoints.notificationsList);
+    return (data as Notification[]) ?? [];
   },
 
   markAsRead: async (id: string): Promise<void> => {
-    await api.patch(`${API_ENDPOINTS.notifications}/${id}/read`);
+    await api.post(EndPoints.notificationsMarkRead, { id });
   },
 
   markAllAsRead: async (): Promise<void> => {
-    await api.patch(`${API_ENDPOINTS.notifications}/read-all`);
+    await api.post(EndPoints.notificationsMarkAllRead);
   },
 
   getUnreadCount: async (): Promise<number> => {
-    const { data } = await api.get<{ count: number }>(
-      `${API_ENDPOINTS.notifications}/unread-count`
-    );
-    return data.count;
+    const list = await notificationService.getAll();
+    return list.filter((n) => !n.isRead).length;
   },
 };

@@ -53,11 +53,13 @@ export const ADMIN_ROUTES = [
 export const ROLE_DASHBOARD: Record<UserRole, string> = {
   BUYER: "/buyer/dashboard",
   SELLER: "/seller/dashboard",
-  SUPER_COLD_ADMIN: "/admin/dashboard",
+  ADMIN: "/admin/dashboard",
+  SUPER_COLD_ADMIN: "/super-cold-admin/dashboard",
 };
 
 export const ROLE_ROUTE_PREFIX: Record<UserRole, string> = {
   BUYER: "/buyer",
   SELLER: "/seller",
-  SUPER_COLD_ADMIN: "/admin",
+  ADMIN: "/admin",
+  SUPER_COLD_ADMIN: "/super-cold-admin",
 };

@@ -18,6 +18,7 @@ import {
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/store/auth.store";
+import { performLogout } from "@/utils/logout";
 import { cn } from "@/lib/utils";
 
 const buyerNav = [
@@ -32,8 +33,14 @@ const buyerNav = [
 
 export function BuyerLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { logout, user } = useAuthStore();
+  const { user } = useAuthStore();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  const handleLogout = async () => {
+    setLoggingOut(true);
+    await performLogout();
+  };
 
   return (
     <div className="flex min-h-screen">
@@ -69,9 +76,14 @@ export function BuyerLayout({ children }: { children: React.ReactNode }) {
           <div className="text-xs text-muted-foreground mb-2 px-3">
             {user?.firstName} {user?.lastName}
           </div>
-          <Button variant="outline" className="w-full" onClick={logout}>
+          <Button
+            variant="outline"
+            className="w-full"
+            onClick={handleLogout}
+            disabled={loggingOut}
+          >
             <LogOut className="h-4 w-4" />
-            Logout
+            {loggingOut ? "Logging out..." : "Logout"}
           </Button>
         </div>
       </aside>

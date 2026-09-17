@@ -12,17 +12,17 @@ import { UserRole } from '../common/enums';
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(UserRole.BUYER)
-@Controller('cart')
+@Controller()
 export class CartController {
   constructor(private readonly cartService: CartService) {}
 
-  @Post('get')
+  @Post('cart_get_api')
   @ApiOperation({ summary: 'Get cart items' })
   getCart(@CurrentUser('sub') userId: string) {
     return this.cartService.getCart(userId);
   }
 
-  @Post('add')
+  @Post('cart_add_api')
   @ApiOperation({ summary: 'Add item to cart' })
   addItem(
     @CurrentUser('sub') userId: string,
@@ -31,7 +31,7 @@ export class CartController {
     return this.cartService.addItem(userId, dto);
   }
 
-  @Post('update')
+  @Post('cart_update_api')
   @ApiOperation({ summary: 'Update cart item quantity' })
   updateItem(
     @CurrentUser('sub') userId: string,
@@ -40,7 +40,7 @@ export class CartController {
     return this.cartService.updateItem(userId, dto);
   }
 
-  @Post('remove')
+  @Post('cart_remove_api')
   @ApiOperation({ summary: 'Remove item from cart' })
   removeItem(
     @CurrentUser('sub') userId: string,
@@ -49,7 +49,7 @@ export class CartController {
     return this.cartService.removeItem(userId, dto.id);
   }
 
-  @Post('clear')
+  @Post('cart_clear_api')
   @ApiOperation({ summary: 'Clear entire cart' })
   clearCart(@CurrentUser('sub') userId: string) {
     return this.cartService.clearCart(userId);

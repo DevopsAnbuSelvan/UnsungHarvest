@@ -14,19 +14,19 @@ import { Public } from '../common/decorators/public.decorator';
 import { UserRole } from '../common/enums';
 
 @ApiTags('Nutrition')
-@Controller('nutrition')
+@Controller()
 export class NutritionController {
   constructor(private readonly nutritionService: NutritionService) {}
 
   @Public()
-  @Post('list')
+  @Post('nutrition_list_api')
   @ApiOperation({ summary: 'List nutrition information' })
   list(@Body() dto: ListNutritionDto) {
     return this.nutritionService.list(dto);
   }
 
   @Public()
-  @Post('get')
+  @Post('nutrition_get_api')
   @ApiOperation({ summary: 'Get nutrition by ID' })
   getById(@Body() dto: NutritionIdDto) {
     return this.nutritionService.getById(dto.id);
@@ -34,8 +34,8 @@ export class NutritionController {
 
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.SUPER_COLD_ADMIN, UserRole.SELLER)
-  @Post('create')
+  @Roles(UserRole.ADMIN, UserRole.SUPER_COLD_ADMIN, UserRole.SELLER)
+  @Post('nutrition_create_api')
   @ApiOperation({ summary: 'Create nutrition information' })
   create(@Body() dto: CreateNutritionDto) {
     return this.nutritionService.create(dto);
@@ -43,8 +43,8 @@ export class NutritionController {
 
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.SUPER_COLD_ADMIN, UserRole.SELLER)
-  @Post('update')
+  @Roles(UserRole.ADMIN, UserRole.SUPER_COLD_ADMIN, UserRole.SELLER)
+  @Post('nutrition_update_api')
   @ApiOperation({ summary: 'Update nutrition information' })
   update(@Body() dto: UpdateNutritionDto) {
     return this.nutritionService.update(dto);
@@ -52,8 +52,8 @@ export class NutritionController {
 
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.SUPER_COLD_ADMIN)
-  @Post('delete')
+  @Roles(UserRole.ADMIN, UserRole.SUPER_COLD_ADMIN)
+  @Post('nutrition_delete_api')
   @ApiOperation({ summary: 'Delete nutrition information' })
   remove(@Body() dto: NutritionIdDto) {
     return this.nutritionService.remove(dto.id);

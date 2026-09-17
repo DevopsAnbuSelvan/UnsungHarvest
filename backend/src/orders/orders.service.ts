@@ -32,7 +32,10 @@ export class OrdersService {
       const orderItems: Partial<OrderItem>[] = [];
 
       for (const item of dto.items) {
-        const product = await manager.findOne(Product, { where: { id: item.productId } });
+        const product = await manager.findOne(Product, {
+          where: { id: item.productId },
+          relations: ['seller'],
+        });
         if (!product) throw new NotFoundException(`Product ${item.productId} not found`);
         if (product.status !== ProductStatus.APPROVED) {
           throw new BadRequestException(`Product ${product.name} is not available`);
@@ -45,12 +48,25 @@ export class OrdersService {
         const totalPrice = unitPrice * item.quantity;
         subtotal += totalPrice;
 
+        const commissionPercent = Number(
+          product.seller?.commissionPercent ?? 5,
+        );
+        const studentCommissionAmount =
+          Math.round(totalPrice * (commissionPercent / 100) * 100) / 100;
+        const farmerAmount =
+          Math.round((totalPrice - studentCommissionAmount) * 100) / 100;
+
         orderItems.push({
           productId: product.id,
           productName: product.name,
           quantity: item.quantity,
           unitPrice,
           totalPrice,
+          farmerId: product.farmerId,
+          sellerId: product.sellerId,
+          commissionPercent,
+          studentCommissionAmount,
+          farmerAmount,
         });
 
         await manager.decrement(Product, { id: product.id }, 'stock', item.quantity);

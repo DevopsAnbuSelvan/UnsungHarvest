@@ -1,25 +1,20 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
-import { ConfigService } from '@nestjs/config';
+import {
+  Injectable,
+  UnauthorizedException,
+  ConflictException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import * as bcrypt from 'bcrypt';
-import { randomBytes } from 'crypto';
 import {
   User,
   BuyerProfile,
   SellerProfile,
-  AdminProfile,
 } from '../database/entities';
 import { UserRole, UserStatus } from '../common/enums';
-import {
-  RegisterDto,
-  LoginDto,
-  ForgotPasswordDto,
-  ResetPasswordDto,
-  VerifyEmailDto,
-  ChangePasswordDto,
-} from './dto/auth.dto';
+import { RegisterDto } from './dto/auth.dto';
+import { FirebaseAdminService } from '../firebase/firebase-admin.service';
+import type { DecodedIdToken } from 'firebase-admin/auth';
 
 @Injectable()
 export class AuthService {
@@ -30,35 +25,58 @@ export class AuthService {
     private buyerProfileRepository: Repository<BuyerProfile>,
     @InjectRepository(SellerProfile)
     private sellerProfileRepository: Repository<SellerProfile>,
-    @InjectRepository(AdminProfile)
-    private adminProfileRepository: Repository<AdminProfile>,
-    private jwtService: JwtService,
-    private configService: ConfigService,
+    private firebaseAdmin: FirebaseAdminService,
   ) {}
 
-  async register(dto: RegisterDto) {
-    const existing = await this.userRepository.findOne({
-      where: { email: dto.email },
-    });
-    if (existing) {
-      throw new UnauthorizedException('Email already registered');
-    }
+  async register(idToken: string, dto: RegisterDto) {
+    const decoded = await this.firebaseAdmin.verifyIdToken(idToken);
 
-    if (dto.role === UserRole.SUPER_COLD_ADMIN) {
+    if (dto.role === UserRole.SUPER_COLD_ADMIN || dto.role === UserRole.ADMIN) {
       throw new UnauthorizedException('Cannot self-register as admin');
     }
 
-    const hashedPassword = await bcrypt.hash(dto.password, 12);
-    const emailVerificationToken = randomBytes(32).toString('hex');
+    const existingByUid = await this.userRepository.findOne({
+      where: { firebaseUid: decoded.uid },
+      relations: ['adminProfile'],
+    });
+    if (existingByUid) {
+      throw new ConflictException('User already registered');
+    }
+
+    const email = decoded.email;
+    if (!email) {
+      throw new BadRequestException('Firebase account must have an email');
+    }
+
+    const existingByEmail = await this.userRepository.findOne({
+      where: { email },
+      relations: ['adminProfile'],
+    });
+
+    if (existingByEmail) {
+      if (existingByEmail.firebaseUid.startsWith('legacy-')) {
+        existingByEmail.firebaseUid = decoded.uid;
+        existingByEmail.name = dto.name;
+        if (dto.phone) existingByEmail.phone = dto.phone;
+        existingByEmail.emailVerified = decoded.email_verified ?? false;
+        existingByEmail.status = UserStatus.ACTIVE;
+        const linked = await this.userRepository.save(existingByEmail);
+        return {
+          user: this.sanitizeUser(linked),
+          accessToken: idToken,
+        };
+      }
+      throw new ConflictException('Email already registered');
+    }
 
     const user = this.userRepository.create({
+      firebaseUid: decoded.uid,
       name: dto.name,
-      email: dto.email,
+      email,
       phone: dto.phone,
-      password: hashedPassword,
       role: dto.role,
-      status: UserStatus.PENDING_VERIFICATION,
-      emailVerificationToken,
+      status: UserStatus.ACTIVE,
+      emailVerified: decoded.email_verified ?? false,
     });
 
     const savedUser = await this.userRepository.save(user);
@@ -76,159 +94,64 @@ export class AuthService {
       );
     }
 
-    const tokens = await this.generateTokens(savedUser);
-    await this.updateRefreshToken(savedUser.id, tokens.refreshToken);
-
     return {
       user: this.sanitizeUser(savedUser),
-      ...tokens,
-      emailVerificationToken,
+      accessToken: idToken,
     };
   }
 
-  async login(dto: LoginDto) {
-    const user = await this.userRepository
-      .createQueryBuilder('user')
-      .addSelect('user.password')
-      .addSelect('user.refreshTokenHash')
-      .leftJoinAndSelect('user.adminProfile', 'adminProfile')
-      .where('user.email = :email', { email: dto.email })
-      .getOne();
+  async login(idToken: string) {
+    const decoded = await this.firebaseAdmin.verifyIdToken(idToken);
+    let user = await this.findByFirebaseUid(decoded.uid);
 
-    if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
+    if (!user && decoded.email) {
+      const byEmail = await this.userRepository.findOne({
+        where: { email: decoded.email },
+        relations: ['adminProfile'],
+      });
+      if (byEmail?.firebaseUid.startsWith('legacy-')) {
+        byEmail.firebaseUid = decoded.uid;
+        byEmail.emailVerified = decoded.email_verified ?? byEmail.emailVerified;
+        user = await this.userRepository.save(byEmail);
+      }
     }
 
-    const isPasswordValid = await bcrypt.compare(dto.password, user.password);
-    if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid credentials');
+    if (!user) {
+      throw new UnauthorizedException(
+        'Account not found. Please complete registration.',
+      );
     }
 
     if (user.status === UserStatus.SUSPENDED) {
       throw new UnauthorizedException('Account suspended');
     }
 
-    const tokens = await this.generateTokens(user);
-    await this.updateRefreshToken(user.id, tokens.refreshToken);
+    if (decoded.email_verified && !user.emailVerified) {
+      await this.userRepository.update(user.id, { emailVerified: true });
+      user.emailVerified = true;
+    }
 
     return {
       user: this.sanitizeUser(user),
-      ...tokens,
+      accessToken: idToken,
     };
   }
 
-  async refreshTokens(refreshToken: string) {
-    try {
-      const payload = this.jwtService.verify(refreshToken, {
-        secret: this.configService.get<string>('jwt.refreshSecret'),
-      });
-
-      const user = await this.userRepository
-        .createQueryBuilder('user')
-        .addSelect('user.refreshTokenHash')
-        .leftJoinAndSelect('user.adminProfile', 'adminProfile')
-        .where('user.id = :id', { id: payload.sub })
-        .getOne();
-
-      if (!user || !user.refreshTokenHash) {
-        throw new UnauthorizedException('Invalid refresh token');
-      }
-
-      const isValid = await bcrypt.compare(refreshToken, user.refreshTokenHash);
-      if (!isValid) {
-        throw new UnauthorizedException('Invalid refresh token');
-      }
-
-      const tokens = await this.generateTokens(user);
-      await this.updateRefreshToken(user.id, tokens.refreshToken);
-
-      return tokens;
-    } catch {
-      throw new UnauthorizedException('Invalid refresh token');
-    }
+  async me(userId: string) {
+    const user = await this.validateUser(userId);
+    if (!user) throw new UnauthorizedException('User not found');
+    return this.sanitizeUser(user);
   }
 
-  async logout(userId: string) {
-    await this.userRepository.update(userId, { refreshTokenHash: null });
+  async logout(_userId: string) {
     return { message: 'Logged out successfully' };
   }
 
-  async forgotPassword(dto: ForgotPasswordDto) {
-    const user = await this.userRepository.findOne({
-      where: { email: dto.email },
+  async findByFirebaseUid(firebaseUid: string): Promise<User | null> {
+    return this.userRepository.findOne({
+      where: { firebaseUid },
+      relations: ['adminProfile'],
     });
-
-    if (user) {
-      const token = randomBytes(32).toString('hex');
-      const expires = new Date(Date.now() + 3600000);
-      await this.userRepository.update(user.id, {
-        passwordResetToken: token,
-        passwordResetExpires: expires,
-      });
-      return { message: 'Password reset token generated', token };
-    }
-
-    return { message: 'If email exists, reset instructions will be sent' };
-  }
-
-  async resetPassword(dto: ResetPasswordDto) {
-    const user = await this.userRepository
-      .createQueryBuilder('user')
-      .addSelect('user.passwordResetToken')
-      .addSelect('user.passwordResetExpires')
-      .where('user.passwordResetToken = :token', { token: dto.token })
-      .getOne();
-
-    if (!user || !user.passwordResetExpires || user.passwordResetExpires < new Date()) {
-      throw new UnauthorizedException('Invalid or expired reset token');
-    }
-
-    const hashedPassword = await bcrypt.hash(dto.newPassword, 12);
-    await this.userRepository.update(user.id, {
-      password: hashedPassword,
-      passwordResetToken: null,
-      passwordResetExpires: null,
-    });
-
-    return { message: 'Password reset successfully' };
-  }
-
-  async verifyEmail(dto: VerifyEmailDto) {
-    const user = await this.userRepository
-      .createQueryBuilder('user')
-      .addSelect('user.emailVerificationToken')
-      .where('user.emailVerificationToken = :token', { token: dto.token })
-      .getOne();
-
-    if (!user) {
-      throw new UnauthorizedException('Invalid verification token');
-    }
-
-    await this.userRepository.update(user.id, {
-      emailVerified: true,
-      emailVerificationToken: null,
-      status: UserStatus.ACTIVE,
-    });
-
-    return { message: 'Email verified successfully' };
-  }
-
-  async changePassword(userId: string, dto: ChangePasswordDto) {
-    const user = await this.userRepository
-      .createQueryBuilder('user')
-      .addSelect('user.password')
-      .where('user.id = :id', { id: userId })
-      .getOne();
-
-    if (!user) throw new UnauthorizedException('User not found');
-
-    const isValid = await bcrypt.compare(dto.currentPassword, user.password);
-    if (!isValid) throw new UnauthorizedException('Current password is incorrect');
-
-    const hashedPassword = await bcrypt.hash(dto.newPassword, 12);
-    await this.userRepository.update(userId, { password: hashedPassword });
-
-    return { message: 'Password changed successfully' };
   }
 
   async validateUser(userId: string): Promise<User | null> {
@@ -238,30 +161,41 @@ export class AuthService {
     });
   }
 
-  private async generateTokens(user: User) {
-    const payload = { sub: user.id, email: user.email, role: user.role };
-
-    const [accessToken, refreshToken] = await Promise.all([
-      this.jwtService.signAsync(payload, {
-        secret: this.configService.get<string>('jwt.secret') || 'default-secret',
-        expiresIn: (this.configService.get<string>('jwt.expiresIn') || '15m') as `${number}${'s' | 'm' | 'h' | 'd'}`,
-      }),
-      this.jwtService.signAsync(payload, {
-        secret: this.configService.get<string>('jwt.refreshSecret') || 'default-refresh-secret',
-        expiresIn: (this.configService.get<string>('jwt.refreshExpiresIn') || '7d') as `${number}${'s' | 'm' | 'h' | 'd'}`,
-      }),
-    ]);
-
-    return { accessToken, refreshToken };
-  }
-
-  private async updateRefreshToken(userId: string, refreshToken: string) {
-    const hash = await bcrypt.hash(refreshToken, 10);
-    await this.userRepository.update(userId, { refreshTokenHash: hash });
+  async resolveFromToken(decoded: DecodedIdToken): Promise<{
+    sub: string;
+    email: string;
+    role: string;
+    permissions: string[];
+    firebaseUid: string;
+  }> {
+    const user = await this.findByFirebaseUid(decoded.uid);
+    if (!user) {
+      throw new UnauthorizedException(
+        'Account not found. Please complete registration.',
+      );
+    }
+    if (user.status === UserStatus.SUSPENDED) {
+      throw new UnauthorizedException('Account suspended');
+    }
+    return {
+      sub: user.id,
+      email: user.email,
+      role: user.role,
+      permissions: user.adminProfile?.permissions || [],
+      firebaseUid: user.firebaseUid,
+    };
   }
 
   private sanitizeUser(user: User) {
-    const { password, refreshTokenHash, emailVerificationToken, passwordResetToken, passwordResetExpires, ...rest } = user;
-    return rest;
+    const { adminProfile, buyerProfile, sellerProfile, ...rest } = user as User & {
+      adminProfile?: unknown;
+      buyerProfile?: unknown;
+      sellerProfile?: unknown;
+    };
+    return {
+      ...rest,
+      permissions: (adminProfile as { permissions?: string[] } | undefined)
+        ?.permissions,
+    };
   }
 }

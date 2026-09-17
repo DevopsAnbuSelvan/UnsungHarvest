@@ -1,5 +1,5 @@
 import api from "@/lib/axios";
-import { API_ENDPOINTS } from "@/constants/api";
+import { EndPoints } from "@/constants/end_points";
 import type { NutritionInfo } from "@/types/product";
 
 interface NutritionListResponse {
@@ -10,7 +10,7 @@ interface NutritionListResponse {
 export const nutritionService = {
   getAll: async (): Promise<NutritionInfo[]> => {
     const { data } = await api.post<NutritionListResponse>(
-      API_ENDPOINTS.nutrition.list,
+      EndPoints.nutritionList,
       { limit: 100 }
     );
     return data.items ?? [];
@@ -18,7 +18,7 @@ export const nutritionService = {
 
   getById: async (id: string): Promise<NutritionInfo> => {
     const { data } = await api.post<NutritionInfo>(
-      API_ENDPOINTS.nutrition.get,
+      EndPoints.nutritionGet,
       { id }
     );
     return data;

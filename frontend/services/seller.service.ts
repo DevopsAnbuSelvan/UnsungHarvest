@@ -1,5 +1,5 @@
 import api from "@/lib/axios";
-import { API_ENDPOINTS } from "@/constants/api";
+import { EndPoints } from "@/constants/end_points";
 import { mapPaginatedProducts, mapProduct } from "@/utils/product";
 import type { Order } from "@/types/order";
 import type { PaginatedResponse, Product } from "@/types/product";
@@ -18,6 +18,7 @@ export interface CreateProductPayload {
   availabilityMonths?: number[];
   cultivationPlace?: string;
   locationId?: string;
+  farmerId?: string;
 }
 
 interface CreatedProduct {
@@ -32,19 +33,19 @@ interface SellerProfile {
 const LIST_LIMIT = 10;
 
 async function getSellerProfileId(): Promise<string> {
-  const { data } = await api.post<SellerProfile>(API_ENDPOINTS.sellers.profileGet);
+  const { data } = await api.post<SellerProfile>(EndPoints.sellersProfileGet);
   return data.id;
 }
 
 export const sellerService = {
   getDashboard: async () => {
-    const { data } = await api.get(API_ENDPOINTS.seller.dashboard);
+    const { data } = await api.post(EndPoints.sellerDashboard);
     return data;
   },
 
   getProducts: async (page = 1): Promise<PaginatedResponse<Product>> => {
     const sellerId = await getSellerProfileId();
-    const { data } = await api.post(API_ENDPOINTS.products.list, {
+    const { data } = await api.post(EndPoints.productsList, {
       page,
       limit: LIST_LIMIT,
       sellerId,
@@ -55,7 +56,7 @@ export const sellerService = {
   },
 
   getProduct: async (id: string): Promise<Product> => {
-    const { data } = await api.post(API_ENDPOINTS.products.get, { id });
+    const { data } = await api.post(EndPoints.productsGet, { id });
     return mapProduct(data as Parameters<typeof mapProduct>[0]);
   },
 
@@ -64,7 +65,7 @@ export const sellerService = {
     images: File[]
   ): Promise<CreatedProduct> => {
     const { data: product } = await api.post<CreatedProduct>(
-      API_ENDPOINTS.products.create,
+      EndPoints.productsCreate,
       {
         name: payload.name,
         localName: payload.localName || undefined,
@@ -76,6 +77,7 @@ export const sellerService = {
         giStatus: payload.isGiTagged ? "registered" : "not_applicable",
         nutritionId: payload.nutritionId || undefined,
         cultivationLocationId: payload.locationId || undefined,
+        farmerId: payload.farmerId || undefined,
       }
     );
 
@@ -83,7 +85,7 @@ export const sellerService = {
       const formData = new FormData();
       formData.append("productId", product.id);
       images.forEach((img) => formData.append("files", img));
-      await api.post(API_ENDPOINTS.uploads.productImages, formData, {
+      await api.post(EndPoints.uploadsProductImages, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
     }
@@ -97,7 +99,7 @@ export const sellerService = {
     images?: File[]
   ): Promise<Product> => {
     const { data: product } = await api.post<Product>(
-      API_ENDPOINTS.products.update,
+      EndPoints.productsUpdate,
       {
         id,
         name: payload.name,
@@ -110,6 +112,7 @@ export const sellerService = {
         giStatus: payload.isGiTagged ? "registered" : "not_applicable",
         nutritionId: payload.nutritionId || undefined,
         cultivationLocationId: payload.locationId || undefined,
+        farmerId: payload.farmerId || undefined,
       }
     );
 
@@ -117,7 +120,7 @@ export const sellerService = {
       const formData = new FormData();
       formData.append("productId", id);
       images.forEach((img) => formData.append("files", img));
-      await api.post(API_ENDPOINTS.uploads.productImages, formData, {
+      await api.post(EndPoints.uploadsProductImages, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
     }
@@ -126,39 +129,36 @@ export const sellerService = {
   },
 
   deleteProduct: async (id: string): Promise<void> => {
-    await api.post(API_ENDPOINTS.products.delete, { id });
+    await api.post(EndPoints.productsDelete, { id });
   },
 
   getInventory: async () => {
-    const { data } = await api.get(API_ENDPOINTS.seller.inventory);
+    const { data } = await api.post(EndPoints.sellerInventory, { limit: 100 });
     return data;
   },
 
   getOrders: async (page = 1): Promise<PaginatedResponse<Order>> => {
-    const { data } = await api.get<PaginatedResponse<Order>>(
-      API_ENDPOINTS.seller.orders,
-      { params: { page } }
-    );
-    return data;
+    const { data } = await api.post(EndPoints.sellerOrders, { page });
+    return data as PaginatedResponse<Order>;
   },
 
   getAnalytics: async () => {
-    const { data } = await api.get(API_ENDPOINTS.seller.analytics);
+    const { data } = await api.post(EndPoints.sellerAnalytics);
     return data;
   },
 
   getCustomers: async () => {
-    const { data } = await api.get(API_ENDPOINTS.seller.customers);
+    const { data } = await api.post(EndPoints.sellerCustomers, { limit: 50 });
     return data;
   },
 
   getProfile: async () => {
-    const { data } = await api.get(API_ENDPOINTS.seller.profile);
+    const { data } = await api.post(EndPoints.sellersProfileGet);
     return data;
   },
 
   updateProfile: async (payload: Record<string, unknown>) => {
-    const { data } = await api.patch(API_ENDPOINTS.seller.profile, payload);
+    const { data } = await api.post(EndPoints.sellersProfileUpdate, payload);
     return data;
   },
 };

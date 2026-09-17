@@ -6,6 +6,8 @@ import {
   ListSellersDto,
   ApproveSellerDto,
   SellerIdDto,
+  CreateSellerDto,
+  AdminUpdateSellerDto,
 } from './dto/seller.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
@@ -16,19 +18,19 @@ import { UserRole } from '../common/enums';
 @ApiTags('Sellers')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Controller('sellers')
+@Controller()
 export class SellersController {
   constructor(private readonly sellersService: SellersService) {}
 
   @Roles(UserRole.SELLER)
-  @Post('profile/get')
+  @Post('sellers_profile_get_api')
   @ApiOperation({ summary: 'Get seller profile' })
   getProfile(@CurrentUser('sub') userId: string) {
     return this.sellersService.getProfile(userId);
   }
 
   @Roles(UserRole.SELLER)
-  @Post('profile/update')
+  @Post('sellers_profile_update_api')
   @ApiOperation({ summary: 'Update seller profile' })
   updateProfile(
     @CurrentUser('sub') userId: string,
@@ -37,15 +39,43 @@ export class SellersController {
     return this.sellersService.updateProfile(userId, dto);
   }
 
-  @Roles(UserRole.SUPER_COLD_ADMIN)
-  @Post('list')
+  @Roles(UserRole.ADMIN, UserRole.SUPER_COLD_ADMIN)
+  @Post('sellers_list_api')
   @ApiOperation({ summary: 'List all sellers' })
   list(@Body() dto: ListSellersDto) {
     return this.sellersService.list(dto);
   }
 
-  @Roles(UserRole.SUPER_COLD_ADMIN)
-  @Post('approve')
+  @Roles(UserRole.ADMIN, UserRole.SUPER_COLD_ADMIN)
+  @Post('sellers_get_api')
+  @ApiOperation({ summary: 'Get seller by profile ID' })
+  getById(@Body() dto: SellerIdDto) {
+    return this.sellersService.getById(dto.id);
+  }
+
+  @Roles(UserRole.ADMIN, UserRole.SUPER_COLD_ADMIN)
+  @Post('sellers_create_api')
+  @ApiOperation({ summary: 'Create seller (admin)' })
+  create(@Body() dto: CreateSellerDto) {
+    return this.sellersService.create(dto);
+  }
+
+  @Roles(UserRole.ADMIN, UserRole.SUPER_COLD_ADMIN)
+  @Post('sellers_update_api')
+  @ApiOperation({ summary: 'Update seller (admin)' })
+  adminUpdate(@Body() dto: AdminUpdateSellerDto) {
+    return this.sellersService.adminUpdate(dto);
+  }
+
+  @Roles(UserRole.ADMIN, UserRole.SUPER_COLD_ADMIN)
+  @Post('sellers_delete_api')
+  @ApiOperation({ summary: 'Delete seller (admin)' })
+  remove(@Body() dto: SellerIdDto) {
+    return this.sellersService.remove(dto.id);
+  }
+
+  @Roles(UserRole.ADMIN, UserRole.SUPER_COLD_ADMIN)
+  @Post('sellers_approve_api')
   @ApiOperation({ summary: 'Approve seller' })
   approve(
     @CurrentUser('sub') adminId: string,
@@ -54,8 +84,8 @@ export class SellersController {
     return this.sellersService.approve(dto.id, adminId);
   }
 
-  @Roles(UserRole.SUPER_COLD_ADMIN)
-  @Post('reject')
+  @Roles(UserRole.ADMIN, UserRole.SUPER_COLD_ADMIN)
+  @Post('sellers_reject_api')
   @ApiOperation({ summary: 'Reject seller' })
   reject(@Body() dto: ApproveSellerDto) {
     return this.sellersService.reject(dto);

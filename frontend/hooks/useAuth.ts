@@ -10,10 +10,25 @@ import { loginSchema, type LoginFormData } from "@/lib/validations";
 import { ROLE_DASHBOARD } from "@/constants/routes";
 import { useToast } from "@/components/ui/toast-context";
 
+function authErrorMessage(error: unknown, fallback: string) {
+  if (!error || typeof error !== "object") return fallback;
+  const code = "code" in error ? String((error as { code: string }).code) : "";
+  if (code === "auth/email-already-in-use") return "Email already in use";
+  if (code === "auth/invalid-credential" || code === "auth/wrong-password")
+    return "Invalid credentials";
+  if (code === "auth/user-not-found") return "Account not found";
+  if (code === "auth/weak-password") return "Password is too weak";
+  const response = (error as { response?: { data?: { message?: string } } })
+    .response;
+  if (response?.data?.message) return response.data.message;
+  if ("message" in error && typeof error.message === "string") return error.message;
+  return fallback;
+}
+
 export function useAuth() {
   const router = useRouter();
   const { toast } = useToast();
-  const { setAuth, logout, user, isAuthenticated } = useAuthStore();
+  const { setAuth, user, isAuthenticated } = useAuthStore();
 
   const loginMutation = useMutation({
     mutationFn: authService.login,
@@ -22,8 +37,11 @@ export function useAuth() {
       toast({ title: "Welcome back!", type: "success" });
       router.push(ROLE_DASHBOARD[data.user.role]);
     },
-    onError: () => {
-      toast({ title: "Invalid credentials", type: "error" });
+    onError: (error) => {
+      toast({
+        title: authErrorMessage(error, "Invalid credentials"),
+        type: "error",
+      });
     },
   });
 
@@ -34,8 +52,11 @@ export function useAuth() {
       toast({ title: "Account created!", type: "success" });
       router.push(ROLE_DASHBOARD[data.user.role]);
     },
-    onError: () => {
-      toast({ title: "Registration failed", type: "error" });
+    onError: (error) => {
+      toast({
+        title: authErrorMessage(error, "Registration failed"),
+        type: "error",
+      });
     },
   });
 
@@ -44,9 +65,8 @@ export function useAuth() {
     defaultValues: { email: "", password: "" },
   });
 
-  const handleLogout = () => {
-    logout();
-    router.push("/login");
+  const handleLogout = async () => {
+    await authService.logout();
   };
 
   return {

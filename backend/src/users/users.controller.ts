@@ -10,30 +10,30 @@ import { UserRole } from '../common/enums';
 @ApiTags('Users')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.SUPER_COLD_ADMIN)
-@Controller('users')
+@Roles(UserRole.ADMIN, UserRole.SUPER_COLD_ADMIN)
+@Controller()
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @Post('list')
+  @Post('users_list_api')
   @ApiOperation({ summary: 'List all users with pagination' })
   list(@Body() dto: ListUsersDto) {
     return this.usersService.list(dto);
   }
 
-  @Post('get')
+  @Post('users_get_api')
   @ApiOperation({ summary: 'Get user by ID' })
   getById(@Body() dto: GetUserDto) {
     return this.usersService.getById(dto.id);
   }
 
-  @Post('update')
+  @Post('users_update_api')
   @ApiOperation({ summary: 'Update user' })
   update(@Body() dto: UpdateUserDto) {
     return this.usersService.update(dto);
   }
 
-  @Post('delete')
+  @Post('users_delete_api')
   @ApiOperation({ summary: 'Soft delete user' })
   remove(@Body() dto: DeleteUserDto) {
     return this.usersService.remove(dto.id);

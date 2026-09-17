@@ -1,8 +1,13 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Product, SellerProfile } from '../database/entities';
-import { GiStatus, ProductStatus } from '../common/enums';
+import { Farmer, Product, SellerProfile } from '../database/entities';
+import { GiStatus, ProductStatus, isStaffRole } from '../common/enums';
 import {
   CreateProductDto,
   UpdateProductDto,
@@ -18,33 +23,68 @@ export class ProductsService {
     private productRepo: Repository<Product>,
     @InjectRepository(SellerProfile)
     private sellerRepo: Repository<SellerProfile>,
+    @InjectRepository(Farmer)
+    private farmerRepo: Repository<Farmer>,
   ) {}
 
-  async create(userId: string, dto: CreateProductDto) {
-    const seller = await this.sellerRepo.findOne({ where: { userId } });
-    if (!seller) throw new ForbiddenException('Seller profile required');
+  async create(userId: string, dto: CreateProductDto, role?: string) {
+    const { sellerId: dtoSellerId, ...productData } = dto;
+    let seller: SellerProfile | null;
+
+    if (isStaffRole(role)) {
+      if (!dtoSellerId) {
+        throw new BadRequestException('sellerId is required for admin create');
+      }
+      seller = await this.sellerRepo.findOne({ where: { id: dtoSellerId } });
+      if (!seller) throw new NotFoundException('Seller not found');
+    } else {
+      seller = await this.sellerRepo.findOne({ where: { userId } });
+      if (!seller) throw new ForbiddenException('Seller profile required');
+    }
+
+    if (productData.farmerId) {
+      await this.assertFarmerBelongsToSeller(productData.farmerId, seller.id);
+    }
 
     const product = this.productRepo.create({
-      ...dto,
+      ...productData,
       sellerId: seller.id,
-      status: ProductStatus.PENDING,
+      status: isStaffRole(role)
+          ? ProductStatus.APPROVED
+          : ProductStatus.PENDING,
+      ...(isStaffRole(role)
+        ? { approvedBy: userId, approvedAt: new Date() }
+        : {}),
     });
     return this.productRepo.save(product);
   }
 
   async list(dto: ListProductsDto) {
-    const { page = 1, limit = 10, search, categoryId, sellerId, status, sortBy = 'createdAt', sortOrder = 'DESC' } = dto;
-    const qb = this.productRepo.createQueryBuilder('product')
+    const {
+      page = 1,
+      limit = 10,
+      search,
+      categoryId,
+      sellerId,
+      status,
+      sortBy = 'createdAt',
+      sortOrder = 'DESC',
+    } = dto;
+    const qb = this.productRepo
+      .createQueryBuilder('product')
       .leftJoinAndSelect('product.category', 'category')
       .leftJoinAndSelect('product.seller', 'seller')
+      .leftJoinAndSelect('seller.user', 'sellerUser')
       .leftJoinAndSelect('product.images', 'images')
       .leftJoinAndSelect('product.season', 'season')
-      .leftJoinAndSelect('product.cultivationLocation', 'cultivationLocation');
+      .leftJoinAndSelect('product.cultivationLocation', 'cultivationLocation')
+      .leftJoinAndSelect('product.farmer', 'farmer');
 
     if (search) {
-      qb.andWhere('(product.name ILIKE :search OR product.localName ILIKE :search)', {
-        search: `%${search}%`,
-      });
+      qb.andWhere(
+        '(product.name ILIKE :search OR product.localName ILIKE :search)',
+        { search: `%${search}%` },
+      );
     }
     if (categoryId) qb.andWhere('product.categoryId = :categoryId', { categoryId });
     if (sellerId) qb.andWhere('product.sellerId = :sellerId', { sellerId });
@@ -62,29 +102,54 @@ export class ProductsService {
   async getById(id: string) {
     const product = await this.productRepo.findOne({
       where: { id },
-      relations: ['category', 'seller', 'images', 'nutrition', 'season', 'cultivationLocation'],
+      relations: [
+        'category',
+        'seller',
+        'seller.user',
+        'images',
+        'nutrition',
+        'season',
+        'cultivationLocation',
+        'farmer',
+      ],
     });
     if (!product) throw new NotFoundException('Product not found');
     return product;
   }
 
-  async update(userId: string, dto: UpdateProductDto) {
+  async update(userId: string, dto: UpdateProductDto, role?: string) {
     const product = await this.getById(dto.id);
+    const { id, sellerId: _sellerId, ...data } = dto;
+
+    if (isStaffRole(role)) {
+      if (data.farmerId) {
+        await this.assertFarmerBelongsToSeller(data.farmerId, product.sellerId);
+      }
+      await this.productRepo.update(id, data);
+      return this.getById(id);
+    }
+
     const seller = await this.sellerRepo.findOne({ where: { userId } });
     if (!seller || product.sellerId !== seller.id) {
       throw new ForbiddenException('Not authorized to update this product');
     }
-    const { id, ...data } = dto;
+    if (data.farmerId) {
+      await this.assertFarmerBelongsToSeller(data.farmerId, seller.id);
+    }
     await this.productRepo.update(id, { ...data, status: ProductStatus.PENDING });
     return this.getById(id);
   }
 
-  async remove(userId: string, id: string) {
+  async remove(userId: string, id: string, role?: string) {
     const product = await this.getById(id);
-    const seller = await this.sellerRepo.findOne({ where: { userId } });
-    if (!seller || product.sellerId !== seller.id) {
-      throw new ForbiddenException('Not authorized to delete this product');
+
+    if (!isStaffRole(role)) {
+      const seller = await this.sellerRepo.findOne({ where: { userId } });
+      if (!seller || product.sellerId !== seller.id) {
+        throw new ForbiddenException('Not authorized to delete this product');
+      }
     }
+
     await this.productRepo.softDelete(id);
     return { message: 'Product deleted' };
   }
@@ -160,6 +225,14 @@ export class ProductsService {
     return qb.getMany();
   }
 
+  private async assertFarmerBelongsToSeller(farmerId: string, sellerId: string) {
+    const farmer = await this.farmerRepo.findOne({ where: { id: farmerId } });
+    if (!farmer) throw new BadRequestException('Farmer not found');
+    if (farmer.sellerId !== sellerId) {
+      throw new ForbiddenException('Farmer does not belong to this seller');
+    }
+  }
+
   private approvedProductsQuery() {
     return this.productRepo
       .createQueryBuilder('product')
@@ -170,6 +243,7 @@ export class ProductsService {
       .leftJoinAndSelect('product.season', 'season')
       .leftJoinAndSelect('product.cultivationLocation', 'cultivationLocation')
       .leftJoinAndSelect('product.nutrition', 'nutrition')
+      .leftJoinAndSelect('product.farmer', 'farmer')
       .where('product.status = :status', { status: ProductStatus.APPROVED })
       .andWhere('product.stock > 0');
   }

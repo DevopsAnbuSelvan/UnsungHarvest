@@ -18,31 +18,50 @@ import {
   Shield,
   LogOut,
   Menu,
+  Sprout,
+  CreditCard,
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { useAuthStore } from "@/store/auth.store";
+import { performLogout } from "@/utils/logout";
 import { cn } from "@/lib/utils";
+import { useAuthStore } from "@/store/auth.store";
+import { isSuperColdAdmin } from "@/types/auth";
+import { SuperColdAdminLayout } from "@/components/layout/super-cold-admin-layout";
 
+/** Regular Admin panel — no staff management */
 const adminNav = [
   { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/sellers", label: "Manage Sellers", icon: Store },
+  { href: "/admin/farmers", label: "Manage Farmers", icon: Sprout },
   { href: "/admin/buyers", label: "Manage Buyers", icon: Users },
   { href: "/admin/products", label: "Manage Products", icon: Package },
   { href: "/admin/categories", label: "Categories", icon: FolderTree },
-  { href: "/admin/season-calendar", label: "Season Calendar", icon: Calendar },
+  { href: "/admin/season-calendar", label: "Seasons", icon: Calendar },
   { href: "/admin/nutrition", label: "Nutrition DB", icon: Apple },
   { href: "/admin/gi-tags", label: "GI Tag DB", icon: Award },
   { href: "/admin/locations", label: "Locations", icon: MapPin },
   { href: "/admin/orders", label: "Orders", icon: ShoppingBag },
+  { href: "/admin/payments", label: "Payments", icon: CreditCard },
   { href: "/admin/reports", label: "Reports", icon: FileText },
   { href: "/admin/settings", label: "Settings", icon: Settings },
 ];
 
 export function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { logout } = useAuthStore();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
+  const user = useAuthStore((s) => s.user);
+
+  // Super Cold Admin always uses their own layout/nav
+  if (isSuperColdAdmin(user?.role)) {
+    return <SuperColdAdminLayout>{children}</SuperColdAdminLayout>;
+  }
+
+  const handleLogout = async () => {
+    setLoggingOut(true);
+    await performLogout();
+  };
 
   return (
     <div className="flex min-h-screen">
@@ -54,7 +73,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
       >
         <div className="flex h-16 items-center gap-2 border-b px-6">
           <Shield className="h-6 w-6 text-primary" />
-          <span className="font-bold text-sm">Super Cold Admin</span>
+          <span className="font-bold text-sm">Admin</span>
         </div>
         <nav className="p-4 space-y-1 overflow-y-auto max-h-[calc(100vh-8rem)]">
           {adminNav.map((item) => (
@@ -75,9 +94,14 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
           ))}
         </nav>
         <div className="absolute bottom-4 left-4 right-4">
-          <Button variant="outline" className="w-full" onClick={logout}>
+          <Button
+            variant="outline"
+            className="w-full"
+            onClick={handleLogout}
+            disabled={loggingOut}
+          >
             <LogOut className="h-4 w-4" />
-            Logout
+            {loggingOut ? "Logging out..." : "Logout"}
           </Button>
         </div>
       </aside>

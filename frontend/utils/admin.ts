@@ -19,7 +19,8 @@ type BackendSellerProfile = {
 type BackendProduct = Parameters<typeof mapProduct>[0];
 
 export function toBackendApprovalStatus(status?: string): string | undefined {
-  return status ? status.toLowerCase() : undefined;
+  if (!status || status.toUpperCase() === "ALL") return undefined;
+  return status.toLowerCase();
 }
 
 export function mapSellerProfile(raw: BackendSellerProfile): SellerWithStatus {

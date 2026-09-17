@@ -14,19 +14,19 @@ import { Public } from '../common/decorators/public.decorator';
 import { UserRole } from '../common/enums';
 
 @ApiTags('Categories')
-@Controller('categories')
+@Controller()
 export class CategoriesController {
   constructor(private readonly categoriesService: CategoriesService) {}
 
   @Public()
-  @Post('list')
+  @Post('categories_list_api')
   @ApiOperation({ summary: 'List categories' })
   list(@Body() dto: ListCategoriesDto) {
     return this.categoriesService.list(dto);
   }
 
   @Public()
-  @Post('get')
+  @Post('categories_get_api')
   @ApiOperation({ summary: 'Get category by ID' })
   getById(@Body() dto: CategoryIdDto) {
     return this.categoriesService.getById(dto.id);
@@ -34,8 +34,8 @@ export class CategoriesController {
 
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.SUPER_COLD_ADMIN)
-  @Post('create')
+  @Roles(UserRole.ADMIN, UserRole.SUPER_COLD_ADMIN)
+  @Post('categories_create_api')
   @ApiOperation({ summary: 'Create category' })
   create(@Body() dto: CreateCategoryDto) {
     return this.categoriesService.create(dto);
@@ -43,8 +43,8 @@ export class CategoriesController {
 
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.SUPER_COLD_ADMIN)
-  @Post('update')
+  @Roles(UserRole.ADMIN, UserRole.SUPER_COLD_ADMIN)
+  @Post('categories_update_api')
   @ApiOperation({ summary: 'Update category' })
   update(@Body() dto: UpdateCategoryDto) {
     return this.categoriesService.update(dto);
@@ -52,8 +52,8 @@ export class CategoriesController {
 
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.SUPER_COLD_ADMIN)
-  @Post('delete')
+  @Roles(UserRole.ADMIN, UserRole.SUPER_COLD_ADMIN)
+  @Post('categories_delete_api')
   @ApiOperation({ summary: 'Delete category' })
   remove(@Body() dto: CategoryIdDto) {
     return this.categoriesService.remove(dto.id);

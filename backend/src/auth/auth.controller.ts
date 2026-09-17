@@ -1,82 +1,67 @@
-import { Controller, Post, Body, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Headers,
+  UnauthorizedException,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
-import {
-  RegisterDto,
-  LoginDto,
-  RefreshTokenDto,
-  ForgotPasswordDto,
-  ResetPasswordDto,
-  VerifyEmailDto,
-  ChangePasswordDto,
-} from './dto/auth.dto';
+import { RegisterDto } from './dto/auth.dto';
 import { Public } from '../common/decorators/public.decorator';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 
 @ApiTags('Auth')
-@Controller('auth')
+@Controller()
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  @Public()
-  @Post('register')
-  @ApiOperation({ summary: 'Register a new user (buyer or seller)' })
-  register(@Body() dto: RegisterDto) {
-    return this.authService.register(dto);
+  private extractBearer(authorization?: string): string {
+    if (!authorization?.startsWith('Bearer ')) {
+      throw new UnauthorizedException('Missing Firebase ID token');
+    }
+    return authorization.slice(7).trim();
   }
 
   @Public()
-  @Post('login')
-  @ApiOperation({ summary: 'Login with email and password' })
-  login(@Body() dto: LoginDto) {
-    return this.authService.login(dto);
+  @Post('user_register_api')
+  @ApiOperation({
+    summary:
+      'Complete registration after Firebase signup (Bearer = Firebase ID token)',
+  })
+  register(
+    @Headers('authorization') authorization: string,
+    @Body() dto: RegisterDto,
+  ) {
+    const idToken = this.extractBearer(authorization);
+    return this.authService.register(idToken, dto);
   }
 
   @Public()
-  @Post('refresh')
-  @ApiOperation({ summary: 'Refresh access token' })
-  refresh(@Body() dto: RefreshTokenDto) {
-    return this.authService.refreshTokens(dto.refreshToken);
+  @Post('user_login_api')
+  @ApiOperation({
+    summary: 'Sync login after Firebase sign-in (Bearer = Firebase ID token)',
+  })
+  login(@Headers('authorization') authorization: string) {
+    const idToken = this.extractBearer(authorization);
+    return this.authService.login(idToken);
   }
 
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
-  @Post('logout')
-  @ApiOperation({ summary: 'Logout and invalidate refresh token' })
+  @Post('user_me_api')
+  @ApiOperation({ summary: 'Get current Neon user profile' })
+  me(@CurrentUser('sub') userId: string) {
+    return this.authService.me(userId);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Post('user_logout_api')
+  @ApiOperation({ summary: 'Logout (client should also sign out of Firebase)' })
   logout(@CurrentUser('sub') userId: string) {
     return this.authService.logout(userId);
-  }
-
-  @Public()
-  @Post('forgot-password')
-  @ApiOperation({ summary: 'Request password reset token' })
-  forgotPassword(@Body() dto: ForgotPasswordDto) {
-    return this.authService.forgotPassword(dto);
-  }
-
-  @Public()
-  @Post('reset-password')
-  @ApiOperation({ summary: 'Reset password with token' })
-  resetPassword(@Body() dto: ResetPasswordDto) {
-    return this.authService.resetPassword(dto);
-  }
-
-  @Public()
-  @Post('verify-email')
-  @ApiOperation({ summary: 'Verify email address' })
-  verifyEmail(@Body() dto: VerifyEmailDto) {
-    return this.authService.verifyEmail(dto);
-  }
-
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
-  @Post('change-password')
-  @ApiOperation({ summary: 'Change password for authenticated user' })
-  changePassword(
-    @CurrentUser('sub') userId: string,
-    @Body() dto: ChangePasswordDto,
-  ) {
-    return this.authService.changePassword(userId, dto);
   }
 }

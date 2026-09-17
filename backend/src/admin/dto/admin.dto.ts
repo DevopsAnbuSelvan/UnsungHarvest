@@ -34,3 +34,35 @@ export class AdminIdDto {
   @IsUUID()
   id: string;
 }
+
+export class UpdateAdminDto {
+  @ApiProperty({ format: 'uuid' })
+  @IsUUID()
+  id: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  name?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  phone?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  department?: string;
+
+  @ApiPropertyOptional({ type: [String] })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  permissions?: string[];
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  status?: string;
+}

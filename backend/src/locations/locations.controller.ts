@@ -14,19 +14,19 @@ import { Public } from '../common/decorators/public.decorator';
 import { UserRole } from '../common/enums';
 
 @ApiTags('Locations')
-@Controller('locations')
+@Controller()
 export class LocationsController {
   constructor(private readonly locationsService: LocationsService) {}
 
   @Public()
-  @Post('list')
+  @Post('locations_list_api')
   @ApiOperation({ summary: 'List cultivation locations' })
   list(@Body() dto: ListLocationsDto) {
     return this.locationsService.list(dto);
   }
 
   @Public()
-  @Post('get')
+  @Post('locations_get_api')
   @ApiOperation({ summary: 'Get location by ID' })
   getById(@Body() dto: LocationIdDto) {
     return this.locationsService.getById(dto.id);
@@ -34,8 +34,8 @@ export class LocationsController {
 
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.SUPER_COLD_ADMIN)
-  @Post('create')
+  @Roles(UserRole.ADMIN, UserRole.SUPER_COLD_ADMIN)
+  @Post('locations_create_api')
   @ApiOperation({ summary: 'Create cultivation location' })
   create(@Body() dto: CreateLocationDto) {
     return this.locationsService.create(dto);
@@ -43,8 +43,8 @@ export class LocationsController {
 
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.SUPER_COLD_ADMIN)
-  @Post('update')
+  @Roles(UserRole.ADMIN, UserRole.SUPER_COLD_ADMIN)
+  @Post('locations_update_api')
   @ApiOperation({ summary: 'Update cultivation location' })
   update(@Body() dto: UpdateLocationDto) {
     return this.locationsService.update(dto);
@@ -52,8 +52,8 @@ export class LocationsController {
 
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.SUPER_COLD_ADMIN)
-  @Post('delete')
+  @Roles(UserRole.ADMIN, UserRole.SUPER_COLD_ADMIN)
+  @Post('locations_delete_api')
   @ApiOperation({ summary: 'Delete cultivation location' })
   remove(@Body() dto: LocationIdDto) {
     return this.locationsService.remove(dto.id);

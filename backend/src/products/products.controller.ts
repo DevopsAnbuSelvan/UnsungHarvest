@@ -17,54 +17,54 @@ import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { UserRole } from '../common/enums';
 
 @ApiTags('Products')
-@Controller('products')
+@Controller()
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
 
   @Public()
-  @Post('list')
+  @Post('products_list_api')
   @ApiOperation({ summary: 'List products with search and filters' })
   list(@Body() dto: ListProductsDto) {
     return this.productsService.list(dto);
   }
 
   @Public()
-  @Post('get')
+  @Post('products_get_api')
   @ApiOperation({ summary: 'Get product by ID' })
   getById(@Body() dto: ProductIdDto) {
     return this.productsService.getById(dto.id);
   }
 
   @Public()
-  @Post('seasonal')
+  @Post('products_seasonal_api')
   @ApiOperation({ summary: 'List seasonal products for the current month' })
   listSeasonal(@Body() dto: ProductListLimitDto) {
     return this.productsService.listSeasonal(dto.limit);
   }
 
   @Public()
-  @Post('gi-tagged')
+  @Post('products_gi_tagged_api')
   @ApiOperation({ summary: 'List GI-tagged products' })
   listGiTagged(@Body() dto: ProductListLimitDto) {
     return this.productsService.listGiTagged(dto.limit);
   }
 
   @Public()
-  @Post('featured')
+  @Post('products_featured_api')
   @ApiOperation({ summary: 'List featured products' })
   listFeatured(@Body() dto: ProductListLimitDto) {
     return this.productsService.listFeatured(dto.limit);
   }
 
   @Public()
-  @Post('trending')
+  @Post('products_trending_api')
   @ApiOperation({ summary: 'List trending products' })
   listTrending(@Body() dto: ProductListLimitDto) {
     return this.productsService.listTrending(dto.limit);
   }
 
   @Public()
-  @Post('recent')
+  @Post('products_recent_api')
   @ApiOperation({ summary: 'List recently added products' })
   listRecent(@Body() dto: ProductListLimitDto) {
     return this.productsService.listRecent(dto.limit);
@@ -72,44 +72,47 @@ export class ProductsController {
 
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.SELLER)
-  @Post('create')
-  @ApiOperation({ summary: 'Create product (seller)' })
+  @Roles(UserRole.SELLER, UserRole.ADMIN, UserRole.SUPER_COLD_ADMIN)
+  @Post('products_create_api')
+  @ApiOperation({ summary: 'Create product (seller or admin)' })
   create(
     @CurrentUser('sub') userId: string,
+    @CurrentUser('role') role: string,
     @Body() dto: CreateProductDto,
   ) {
-    return this.productsService.create(userId, dto);
+    return this.productsService.create(userId, dto, role);
   }
 
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.SELLER)
-  @Post('update')
-  @ApiOperation({ summary: 'Update product (seller)' })
+  @Roles(UserRole.SELLER, UserRole.ADMIN, UserRole.SUPER_COLD_ADMIN)
+  @Post('products_update_api')
+  @ApiOperation({ summary: 'Update product (seller or admin)' })
   update(
     @CurrentUser('sub') userId: string,
+    @CurrentUser('role') role: string,
     @Body() dto: UpdateProductDto,
   ) {
-    return this.productsService.update(userId, dto);
+    return this.productsService.update(userId, dto, role);
   }
 
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.SELLER)
-  @Post('delete')
-  @ApiOperation({ summary: 'Delete product (seller)' })
+  @Roles(UserRole.SELLER, UserRole.ADMIN, UserRole.SUPER_COLD_ADMIN)
+  @Post('products_delete_api')
+  @ApiOperation({ summary: 'Delete product (seller or admin)' })
   remove(
     @CurrentUser('sub') userId: string,
+    @CurrentUser('role') role: string,
     @Body() dto: ProductIdDto,
   ) {
-    return this.productsService.remove(userId, dto.id);
+    return this.productsService.remove(userId, dto.id, role);
   }
 
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.SUPER_COLD_ADMIN)
-  @Post('approve')
+  @Roles(UserRole.ADMIN, UserRole.SUPER_COLD_ADMIN)
+  @Post('products_approve_api')
   @ApiOperation({ summary: 'Approve product (admin)' })
   approve(
     @CurrentUser('sub') adminId: string,
@@ -120,8 +123,8 @@ export class ProductsController {
 
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.SUPER_COLD_ADMIN)
-  @Post('reject')
+  @Roles(UserRole.ADMIN, UserRole.SUPER_COLD_ADMIN)
+  @Post('products_reject_api')
   @ApiOperation({ summary: 'Reject product (admin)' })
   reject(@Body() dto: ApproveProductDto) {
     return this.productsService.reject(dto);

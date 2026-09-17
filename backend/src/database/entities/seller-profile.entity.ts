@@ -44,6 +44,16 @@ export class SellerProfile extends BaseEntity {
   @Column({ name: 'avatar_url', nullable: true })
   avatarUrl: string;
 
+  /** Student commission % of sale price (default 5) */
+  @Column({
+    name: 'commission_percent',
+    type: 'decimal',
+    precision: 5,
+    scale: 2,
+    default: 5,
+  })
+  commissionPercent: number;
+
   @OneToMany(() => Product, (product) => product.seller)
   products: Product[];
 }

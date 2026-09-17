@@ -1,7 +1,22 @@
 export enum UserRole {
   BUYER = 'buyer',
   SELLER = 'seller',
+  ADMIN = 'admin',
   SUPER_COLD_ADMIN = 'super_cold_admin',
+}
+
+/** Platform staff who can access the admin panel */
+export const STAFF_ROLES: UserRole[] = [
+  UserRole.ADMIN,
+  UserRole.SUPER_COLD_ADMIN,
+];
+
+export function isStaffRole(role?: string | null): boolean {
+  return role === UserRole.ADMIN || role === UserRole.SUPER_COLD_ADMIN;
+}
+
+export function isSuperColdAdmin(role?: string | null): boolean {
+  return role === UserRole.SUPER_COLD_ADMIN;
 }
 
 export enum UserStatus {

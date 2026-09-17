@@ -1,4 +1,4 @@
-export type UserRole = "BUYER" | "SELLER" | "SUPER_COLD_ADMIN";
+export type UserRole = "BUYER" | "SELLER" | "ADMIN" | "SUPER_COLD_ADMIN";
 
 export interface User {
   id: string;
@@ -29,4 +29,12 @@ export interface RegisterPayload {
   lastName: string;
   role: "BUYER" | "SELLER";
   phone?: string;
+}
+
+export function isAdminPanelRole(role?: string | null): boolean {
+  return role === "ADMIN" || role === "SUPER_COLD_ADMIN";
+}
+
+export function isSuperColdAdmin(role?: string | null): boolean {
+  return role === "SUPER_COLD_ADMIN";
 }

@@ -18,6 +18,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/store/auth.store";
 import { ROLE_DASHBOARD } from "@/constants/routes";
+import { performLogout } from "@/utils/logout";
 import { cn } from "@/lib/utils";
 
 const navLinks = [
@@ -34,9 +35,15 @@ export function Header() {
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { isAuthenticated, user, logout } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
+  const [loggingOut, setLoggingOut] = useState(false);
 
   const dashboardHref = user ? ROLE_DASHBOARD[user.role] : "/login";
+
+  const handleLogout = async () => {
+    setLoggingOut(true);
+    await performLogout();
+  };
 
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background/80 backdrop-blur-lg">
@@ -88,7 +95,12 @@ export function Header() {
                   <User className="h-5 w-5" />
                 </Button>
               </Link>
-              <Button variant="ghost" size="icon" onClick={logout}>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleLogout}
+                disabled={loggingOut}
+              >
                 <LogOut className="h-5 w-5" />
               </Button>
             </>

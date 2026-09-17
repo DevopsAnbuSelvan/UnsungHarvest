@@ -24,7 +24,13 @@ function setAuthCookie(value: string) {
 
 function clearAuthCookie() {
   if (typeof document === "undefined") return;
-  document.cookie = "unsung-harvest-auth=; path=/; max-age=0";
+  document.cookie =
+    "unsung-harvest-auth=; path=/; max-age=0; SameSite=Lax";
+  try {
+    localStorage.removeItem("unsung-harvest-auth");
+  } catch {
+    // ignore
+  }
 }
 
 export const useAuthStore = create<AuthState>()(

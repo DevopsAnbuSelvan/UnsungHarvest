@@ -8,7 +8,7 @@ import { DashboardCardSkeleton } from "@/components/ui/skeleton";
 import { ErrorState } from "@/components/ui/error-state";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { adminService } from "@/services/admin.service";
+import { adminService } from "@/services/admin";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,

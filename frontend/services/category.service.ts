@@ -1,5 +1,5 @@
 import api from "@/lib/axios";
-import { API_ENDPOINTS } from "@/constants/api";
+import { EndPoints } from "@/constants/end_points";
 import type { Category } from "@/types/admin";
 
 interface CategoryListResponse {
@@ -10,7 +10,7 @@ interface CategoryListResponse {
 export const categoryService = {
   getAll: async (): Promise<Category[]> => {
     const { data } = await api.post<CategoryListResponse>(
-      API_ENDPOINTS.categories.list,
+      EndPoints.categoriesList,
       { limit: 100, isActive: true }
     );
     return data.items ?? [];
@@ -18,7 +18,7 @@ export const categoryService = {
 
   getById: async (id: string): Promise<Category> => {
     const { data } = await api.post<Category>(
-      API_ENDPOINTS.categories.get,
+      EndPoints.categoriesGet,
       { id }
     );
     return data;

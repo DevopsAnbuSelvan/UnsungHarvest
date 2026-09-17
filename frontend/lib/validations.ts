@@ -43,6 +43,7 @@ export const productSchema = z.object({
   availabilityMonths: z.array(z.number()).optional(),
   cultivationPlace: z.string().optional(),
   locationId: z.string().optional(),
+  farmerId: z.string().min(1, "Select a farmer"),
 });
 
 export type LoginFormData = z.infer<typeof loginSchema>;
