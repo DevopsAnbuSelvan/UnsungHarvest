@@ -1,7 +1,9 @@
-/** @type {import('next').NextConfig} */
-const nextConfig = {
+import type { NextConfig } from "next";
+
+const nextConfig: NextConfig = {
   images: {
-    dangerouslyAllowLocalIP: true,
+    // Local IP images only needed in local/dev — avoid Vercel packaging quirks
+    ...(process.env.VERCEL ? {} : { dangerouslyAllowLocalIP: true }),
     remotePatterns: [
       { protocol: "https", hostname: "**.public.blob.vercel-storage.com" },
       { protocol: "https", hostname: "**" },
