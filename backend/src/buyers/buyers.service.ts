@@ -46,7 +46,22 @@ export class BuyersService {
 
   async updateProfile(userId: string, dto: UpdateBuyerProfileDto) {
     const profile = await this.getProfile(userId);
-    await this.buyerRepo.update(profile.id, dto);
+    const { name, phone, bio, avatarUrl } = dto;
+
+    if (name !== undefined || phone !== undefined) {
+      await this.userRepo.update(userId, {
+        ...(name !== undefined ? { name } : {}),
+        ...(phone !== undefined ? { phone } : {}),
+      });
+    }
+
+    if (bio !== undefined || avatarUrl !== undefined) {
+      await this.buyerRepo.update(profile.id, {
+        ...(bio !== undefined ? { bio } : {}),
+        ...(avatarUrl !== undefined ? { avatarUrl } : {}),
+      });
+    }
+
     return this.getProfile(userId);
   }
 

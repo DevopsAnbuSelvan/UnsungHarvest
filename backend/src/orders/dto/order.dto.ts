@@ -1,5 +1,14 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsArray, IsEnum, IsOptional, IsString, IsUUID, ValidateNested } from 'class-validator';
+import {
+  IsArray,
+  IsEnum,
+  IsInt,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Min,
+  ValidateNested,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { PaginationDto } from '../../common/dto/pagination.dto';
 import { OrderStatus } from '../../common/enums';
@@ -9,17 +18,20 @@ export class OrderItemDto {
   @IsUUID()
   productId: string;
 
-  @ApiProperty()
+  @ApiProperty({ minimum: 1 })
   @Type(() => Number)
+  @IsInt()
+  @Min(1)
   quantity: number;
 }
 
 export class CreateOrderDto {
-  @ApiProperty({ type: [OrderItemDto] })
+  @ApiPropertyOptional({ type: [OrderItemDto] })
+  @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => OrderItemDto)
-  items: OrderItemDto[];
+  items?: OrderItemDto[];
 
   @ApiPropertyOptional({ format: 'uuid' })
   @IsOptional()

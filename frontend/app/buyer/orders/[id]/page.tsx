@@ -39,28 +39,35 @@ export default function OrderDetailPage({
               {order.items.map((item) => (
                 <div key={item.id} className="flex justify-between text-sm">
                   <span>{item.productName} x {item.quantity}</span>
-                  <span>{formatCurrency(item.total)}</span>
+                  <span>{formatCurrency(item.total ?? 0)}</span>
                 </div>
               ))}
+              {!order.items.length && (
+                <p className="text-muted-foreground text-sm">No items</p>
+              )}
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader><CardTitle>Shipping Address</CardTitle></CardHeader>
             <CardContent className="text-sm space-y-1">
-              <p>{order.shippingAddress.fullName}</p>
-              <p>{order.shippingAddress.addressLine1}</p>
-              <p>{order.shippingAddress.city}, {order.shippingAddress.state} - {order.shippingAddress.pincode}</p>
-              <p>{order.shippingAddress.phone}</p>
+              <p>{order.shippingAddress?.fullName || "—"}</p>
+              <p>{order.shippingAddress?.addressLine1 || "—"}</p>
+              <p>
+                {order.shippingAddress?.city || "—"},{" "}
+                {order.shippingAddress?.state || "—"} -{" "}
+                {order.shippingAddress?.pincode || "—"}
+              </p>
+              <p>{order.shippingAddress?.phone || "—"}</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardContent className="p-6 space-y-2 text-sm">
-              <div className="flex justify-between"><span>Subtotal</span><span>{formatCurrency(order.subtotal)}</span></div>
-              <div className="flex justify-between"><span>Delivery</span><span>{formatCurrency(order.deliveryCharges)}</span></div>
-              {order.discount > 0 && <div className="flex justify-between text-emerald-600"><span>Discount</span><span>-{formatCurrency(order.discount)}</span></div>}
-              <div className="flex justify-between font-bold text-lg border-t pt-2"><span>Total</span><span>{formatCurrency(order.total)}</span></div>
+              <div className="flex justify-between"><span>Subtotal</span><span>{formatCurrency(order.subtotal ?? 0)}</span></div>
+              <div className="flex justify-between"><span>Delivery</span><span>{formatCurrency(order.deliveryCharges ?? 0)}</span></div>
+              {(order.discount ?? 0) > 0 && <div className="flex justify-between text-emerald-600"><span>Discount</span><span>-{formatCurrency(order.discount)}</span></div>}
+              <div className="flex justify-between font-bold text-lg border-t pt-2"><span>Total</span><span>{formatCurrency(order.total ?? 0)}</span></div>
               <div className="flex justify-between text-muted-foreground"><span>Payment</span><span className="capitalize">{order.paymentMethod === "COD" ? "Cash on Delivery" : "Online"}</span></div>
             </CardContent>
           </Card>

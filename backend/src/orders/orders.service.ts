@@ -6,6 +6,7 @@ import {
   OrderItem,
   Product,
   BuyerProfile,
+  Cart,
 } from '../database/entities';
 import { OrderStatus, ProductStatus } from '../common/enums';
 import { CreateOrderDto, ListOrdersDto, UpdateOrderStatusDto } from './dto/order.dto';
@@ -20,6 +21,8 @@ export class OrdersService {
     private buyerRepo: Repository<BuyerProfile>,
     @InjectRepository(Product)
     private productRepo: Repository<Product>,
+    @InjectRepository(Cart)
+    private cartRepo: Repository<Cart>,
     private dataSource: DataSource,
   ) {}
 
@@ -27,21 +30,44 @@ export class OrdersService {
     const buyer = await this.buyerRepo.findOne({ where: { userId } });
     if (!buyer) throw new NotFoundException('Buyer profile not found');
 
+    let lineItems = dto.items ?? [];
+    if (!lineItems.length) {
+      const cartRows = await this.cartRepo.find({
+        where: { buyerId: buyer.id },
+      });
+      lineItems = cartRows.map((row) => ({
+        productId: row.productId,
+        quantity: row.quantity,
+      }));
+    }
+
+    if (!lineItems.length) {
+      throw new BadRequestException(
+        'Cart is empty — add products before ordering',
+      );
+    }
+
     return this.dataSource.transaction(async (manager) => {
       let subtotal = 0;
       const orderItems: Partial<OrderItem>[] = [];
 
-      for (const item of dto.items) {
+      for (const item of lineItems) {
         const product = await manager.findOne(Product, {
           where: { id: item.productId },
           relations: ['seller'],
         });
-        if (!product) throw new NotFoundException(`Product ${item.productId} not found`);
+        if (!product) {
+          throw new NotFoundException(`Product ${item.productId} not found`);
+        }
         if (product.status !== ProductStatus.APPROVED) {
-          throw new BadRequestException(`Product ${product.name} is not available`);
+          throw new BadRequestException(
+            `Product ${product.name} is not available`,
+          );
         }
         if (product.stock < item.quantity) {
-          throw new BadRequestException(`Insufficient stock for ${product.name}`);
+          throw new BadRequestException(
+            `Insufficient stock for ${product.name}`,
+          );
         }
 
         const unitPrice = Number(product.price);
@@ -69,14 +95,19 @@ export class OrdersService {
           farmerAmount,
         });
 
-        await manager.decrement(Product, { id: product.id }, 'stock', item.quantity);
+        await manager.decrement(
+          Product,
+          { id: product.id },
+          'stock',
+          item.quantity,
+        );
       }
 
       const shippingFee = 0;
       const tax = subtotal * 0.05;
       const total = subtotal + shippingFee + tax;
 
-      const order = manager.create(Order, {
+      const created = manager.create(Order, {
         orderNumber: generateOrderNumber(),
         buyerId: buyer.id,
         shippingAddressId: dto.shippingAddressId,
@@ -88,11 +119,13 @@ export class OrdersService {
         notes: dto.notes,
       });
 
-      const savedOrder = await manager.save(Order, order);
+      const savedOrder = await manager.save(Order, created);
 
       for (const item of orderItems) {
         await manager.save(OrderItem, { ...item, orderId: savedOrder.id });
       }
+
+      await manager.softDelete(Cart, { buyerId: buyer.id });
 
       return manager.findOne(Order, {
         where: { id: savedOrder.id },
@@ -113,10 +146,12 @@ export class OrdersService {
 
   private async listOrders(dto: ListOrdersDto & { buyerId?: string }) {
     const { page = 1, limit = 10, status, buyerId } = dto;
-    const qb = this.orderRepo.createQueryBuilder('order')
+    const qb = this.orderRepo
+      .createQueryBuilder('order')
       .leftJoinAndSelect('order.items', 'items')
       .leftJoinAndSelect('order.buyer', 'buyer')
-      .leftJoinAndSelect('buyer.user', 'user');
+      .leftJoinAndSelect('buyer.user', 'user')
+      .leftJoinAndSelect('order.shippingAddress', 'shippingAddress');
 
     if (status) qb.andWhere('order.status = :status', { status });
     if (buyerId) qb.andWhere('order.buyerId = :buyerId', { buyerId });
@@ -131,7 +166,13 @@ export class OrdersService {
   async getById(id: string) {
     const order = await this.orderRepo.findOne({
       where: { id },
-      relations: ['items', 'items.product', 'buyer', 'buyer.user', 'shippingAddress'],
+      relations: [
+        'items',
+        'items.product',
+        'buyer',
+        'buyer.user',
+        'shippingAddress',
+      ],
     });
     if (!order) throw new NotFoundException('Order not found');
     return order;

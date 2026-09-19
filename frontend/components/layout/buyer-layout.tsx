@@ -5,15 +5,12 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   User,
-  Heart,
   ShoppingCart,
   Package,
-  Bell,
   Settings,
   Leaf,
   LogOut,
   Menu,
-  X,
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -24,10 +21,8 @@ import { cn } from "@/lib/utils";
 const buyerNav = [
   { href: "/buyer/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/buyer/profile", label: "Profile", icon: User },
-  { href: "/buyer/wishlist", label: "Wishlist", icon: Heart },
   { href: "/buyer/cart", label: "Cart", icon: ShoppingCart },
   { href: "/buyer/orders", label: "Orders", icon: Package },
-  { href: "/buyer/notifications", label: "Notifications", icon: Bell },
   { href: "/buyer/settings", label: "Settings", icon: Settings },
 ];
 
@@ -73,8 +68,10 @@ export function BuyerLayout({ children }: { children: React.ReactNode }) {
           ))}
         </nav>
         <div className="absolute bottom-4 left-4 right-4">
-          <div className="text-xs text-muted-foreground mb-2 px-3">
-            {user?.firstName} {user?.lastName}
+          <div className="text-xs text-muted-foreground mb-2 px-3 truncate">
+            {user?.firstName
+              ? `${user.firstName}${user.lastName ? ` ${user.lastName}` : ""}`
+              : user?.email || "Buyer"}
           </div>
           <Button
             variant="outline"

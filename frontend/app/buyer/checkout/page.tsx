@@ -27,7 +27,23 @@ export default function CheckoutPage() {
       toast({ title: "Order placed successfully!", type: "success" });
       router.push(`/buyer/orders/${order.id}?success=true`);
     },
-    onError: () => toast({ title: "Checkout failed", type: "error" }),
+    onError: (err: unknown) => {
+      const message =
+        err &&
+        typeof err === "object" &&
+        "response" in err &&
+        err.response &&
+        typeof err.response === "object" &&
+        "data" in err.response &&
+        err.response.data &&
+        typeof err.response.data === "object" &&
+        "message" in err.response.data
+          ? String((err.response.data as { message: string }).message)
+          : err instanceof Error
+            ? err.message
+            : "Checkout failed";
+      toast({ title: message, type: "error" });
+    },
   });
 
   return (

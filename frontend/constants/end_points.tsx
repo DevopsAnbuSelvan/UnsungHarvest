@@ -103,6 +103,8 @@ export class EndPoints {
   // Buyers
   static readonly buyersProfileGet = "buyers_profile_get_api";
   static readonly buyersProfileUpdate = "buyers_profile_update_api";
+  static readonly buyersAddressesCreate = "buyers_addresses_create_api";
+  static readonly buyersAddressesList = "buyers_addresses_list_api";
   static readonly buyersList = "buyers_list_api";
   static readonly buyersGet = "buyers_get_api";
   static readonly buyersCreate = "buyers_create_api";

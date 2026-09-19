@@ -133,7 +133,14 @@ export const sellerService = {
   },
 
   getInventory: async () => {
-    const { data } = await api.post(EndPoints.sellerInventory, { limit: 100 });
+    const sellerId = await getSellerProfileId();
+    const { data } = await api.post(EndPoints.sellerInventory, {
+      page: 1,
+      limit: 100,
+      sellerId,
+      sortBy: "createdAt",
+      sortOrder: "DESC",
+    });
     return data;
   },
 

@@ -9,7 +9,6 @@ import {
   Sun,
   Moon,
   ShoppingCart,
-  Heart,
   User,
   LogOut,
 } from "lucide-react";
@@ -83,11 +82,6 @@ export function Header() {
               <Link href="/buyer/cart">
                 <Button variant="ghost" size="icon">
                   <ShoppingCart className="h-5 w-5" />
-                </Button>
-              </Link>
-              <Link href="/buyer/wishlist">
-                <Button variant="ghost" size="icon">
-                  <Heart className="h-5 w-5" />
                 </Button>
               </Link>
               <Link href={dashboardHref}>

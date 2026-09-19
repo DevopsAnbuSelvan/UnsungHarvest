@@ -6,7 +6,11 @@ import {
   BuyerProfile,
   Product,
   Order,
+  OrderItem,
   Payment,
+  Cart,
+  Wishlist,
+  Notification,
 } from '../database/entities';
 import { DashboardController } from './dashboard.controller';
 import { DashboardService } from './dashboard.service';
@@ -20,7 +24,11 @@ import { AuthModule } from '../auth/auth.module';
       BuyerProfile,
       Product,
       Order,
+      OrderItem,
       Payment,
+      Cart,
+      Wishlist,
+      Notification,
     ]),
     AuthModule,
   ],

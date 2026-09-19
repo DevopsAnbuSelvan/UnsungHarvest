@@ -34,7 +34,7 @@ export default function BuyerOrdersPage() {
                   <div>
                     <p className="font-semibold">#{order.orderNumber}</p>
                     <p className="text-sm text-muted-foreground">{formatDate(order.createdAt)}</p>
-                    <p className="text-sm">{order.items.length} item(s)</p>
+                    <p className="text-sm">{order.items?.length ?? 0} item(s)</p>
                   </div>
                   <div className="flex items-center gap-4">
                     <Badge variant="outline" className="capitalize">{order.status.toLowerCase()}</Badge>

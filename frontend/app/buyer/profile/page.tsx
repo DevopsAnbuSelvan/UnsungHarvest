@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { BuyerLayout } from "@/components/layout/buyer-layout";
@@ -11,50 +12,91 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { buyerService } from "@/services/buyer.service";
 import { useToast } from "@/components/ui/toast-context";
 
+type ProfileForm = {
+  name: string;
+  phone: string;
+  bio: string;
+};
+
+type BuyerProfileResponse = {
+  bio?: string;
+  user?: {
+    name?: string;
+    email?: string;
+    phone?: string;
+  };
+};
+
 export default function BuyerProfilePage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { data, isLoading } = useQuery({
     queryKey: ["buyer-profile"],
-    queryFn: buyerService.getProfile,
+    queryFn: () =>
+      buyerService.getProfile() as Promise<BuyerProfileResponse>,
   });
 
-  const { register, handleSubmit, reset } = useForm();
+  const { register, handleSubmit, reset } = useForm<ProfileForm>({
+    defaultValues: { name: "", phone: "", bio: "" },
+  });
+
+  useEffect(() => {
+    if (!data) return;
+    reset({
+      name: data.user?.name || "",
+      phone: data.user?.phone || "",
+      bio: data.bio || "",
+    });
+  }, [data, reset]);
 
   const updateProfile = useMutation({
-    mutationFn: buyerService.updateProfile,
+    mutationFn: (form: ProfileForm) =>
+      buyerService.updateProfile({
+        name: form.name || undefined,
+        phone: form.phone || undefined,
+        bio: form.bio || undefined,
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["buyer-profile"] });
       toast({ title: "Profile updated", type: "success" });
     },
+    onError: () => toast({ title: "Failed to update profile", type: "error" }),
   });
 
-  if (isLoading) return <BuyerLayout><Skeleton className="h-64 rounded-2xl" /></BuyerLayout>;
+  if (isLoading) {
+    return (
+      <BuyerLayout>
+        <Skeleton className="h-64 rounded-2xl" />
+      </BuyerLayout>
+    );
+  }
 
   return (
     <BuyerLayout>
       <Card className="max-w-lg">
-        <CardHeader><CardTitle>Profile</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle>Profile</CardTitle>
+        </CardHeader>
         <CardContent>
           <form
             onSubmit={handleSubmit((formData) => updateProfile.mutate(formData))}
             className="space-y-4"
           >
             <div className="space-y-2">
-              <Label>First Name</Label>
-              <Input defaultValue={data?.firstName} {...register("firstName")} />
-            </div>
-            <div className="space-y-2">
-              <Label>Last Name</Label>
-              <Input defaultValue={data?.lastName} {...register("lastName")} />
+              <Label>Name</Label>
+              <Input {...register("name")} />
             </div>
             <div className="space-y-2">
               <Label>Email</Label>
-              <Input defaultValue={data?.email} disabled />
+              <Input value={data?.user?.email || ""} disabled />
             </div>
             <div className="space-y-2">
               <Label>Phone</Label>
-              <Input defaultValue={data?.phone} {...register("phone")} />
+              <Input {...register("phone")} />
+            </div>
+            <div className="space-y-2">
+              <Label>Bio</Label>
+              <Input {...register("bio")} />
             </div>
             <Button type="submit" disabled={updateProfile.isPending}>
               {updateProfile.isPending ? "Saving..." : "Save Changes"}
