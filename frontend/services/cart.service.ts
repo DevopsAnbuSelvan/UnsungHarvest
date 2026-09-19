@@ -12,21 +12,16 @@ type BackendCartRow = {
 
 function mapCartRows(rows: BackendCartRow[]): Cart {
   const items: CartItem[] = (rows || []).map((row) => {
-    const product = row.product
-      ? mapProduct(row.product)
-      : ({
-          id: row.productId,
-          name: "Product",
-          description: "",
-          price: 0,
-          stock: 0,
-          images: [],
-          categoryId: "",
-          sellerId: "",
-          isGiTagged: false,
-          season: [],
-          status: "APPROVED",
-        } as CartItem["product"]);
+    const product = mapProduct(
+      row.product ?? {
+        id: row.productId,
+        name: "Product",
+        description: "",
+        price: 0,
+        stock: 0,
+        images: [],
+      }
+    );
 
     return {
       id: row.id,
