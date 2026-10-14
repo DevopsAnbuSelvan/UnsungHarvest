@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Leaf, Mail, Phone, MapPin, Heart } from "lucide-react";
+import { Leaf, Mail, Phone, MapPin, Heart, Globe } from "lucide-react";
 
 const footerLinks = {
   shop: [
@@ -72,16 +72,34 @@ export function Footer() {
             <h4 className="font-semibold mb-4">Contact</h4>
             <ul className="space-y-3 text-sm text-muted-foreground">
               <li className="flex items-center gap-2">
-                <Mail className="h-4 w-4" />
-                hello@unsungharvest.com
+                <Phone className="h-4 w-4 shrink-0" />
+                <a href="tel:7299035015" className="hover:text-primary transition-colors">
+                  72990 35015
+                </a>
               </li>
               <li className="flex items-center gap-2">
-                <Phone className="h-4 w-4" />
-                +91 91504 92260
+                <Mail className="h-4 w-4 shrink-0" />
+                <a
+                  href="mailto:dindigul@velammalbodhicampus.com"
+                  className="hover:text-primary transition-colors break-all"
+                >
+                  dindigul@velammalbodhicampus.com
+                </a>
+              </li>
+              <li className="flex items-start gap-2">
+                <MapPin className="h-4 w-4 shrink-0 mt-0.5" />
+                Kovilur, Mullipadi, Tamil Nadu 624005
               </li>
               <li className="flex items-center gap-2">
-                <MapPin className="h-4 w-4" />
-                Dindigul, Tamil Nadu, India
+                <Globe className="h-4 w-4 shrink-0" />
+                <a
+                  href="https://vbcdindigul.com/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-primary transition-colors"
+                >
+                  vbcdindigul.com
+                </a>
               </li>
             </ul>
           </div>
@@ -94,12 +112,12 @@ export function Footer() {
             <Heart className="inline h-4 w-4 text-red-500 fill-red-500 align-text-bottom" />{" "}
             by{" "}
             <a
-              href="https://anbyte.in"
+              href="https://vbcdindigul.com/"
               target="_blank"
               rel="noopener noreferrer"
               className="font-medium text-primary hover:underline"
             >
-              ANBU
+              VBC Dindigul
             </a>
           </p>
         </div>

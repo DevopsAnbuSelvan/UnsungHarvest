@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/toast-context";
-import { Mail, Phone, MapPin } from "lucide-react";
+import { Mail, Phone, MapPin, Globe } from "lucide-react";
 
 interface ContactForm {
   name: string;
@@ -60,15 +60,28 @@ export default function ContactPage() {
 
           <div className="space-y-6">
             {[
-              { icon: Mail, label: "Email", value: "hello@unsungharvest.com" },
-              { icon: Phone, label: "Phone", value: "+91 91504 92260" },
-              { icon: MapPin, label: "Address", value: "Dindigul, Tamil Nadu, India" },
+              { icon: Phone, label: "Phone", value: "72990 35015", href: "tel:7299035015" },
+              { icon: Mail, label: "Email", value: "dindigul@velammalbodhicampus.com", href: "mailto:dindigul@velammalbodhicampus.com" },
+              { icon: MapPin, label: "Address", value: "Kovilur, Mullipadi, Tamil Nadu 624005" },
+              { icon: Globe, label: "Website", value: "vbcdindigul.com", href: "https://vbcdindigul.com/" },
             ].map((item) => (
               <div key={item.label} className="flex items-start gap-4 glass-card rounded-2xl p-6">
                 <item.icon className="h-6 w-6 text-primary shrink-0" />
                 <div>
                   <p className="font-semibold">{item.label}</p>
-                  <p className="text-muted-foreground">{item.value}</p>
+                  {"href" in item && item.href ? (
+                    <a
+                      href={item.href}
+                      {...(item.href.startsWith("http")
+                        ? { target: "_blank", rel: "noopener noreferrer" }
+                        : {})}
+                      className="text-muted-foreground hover:text-primary transition-colors"
+                    >
+                      {item.value}
+                    </a>
+                  ) : (
+                    <p className="text-muted-foreground">{item.value}</p>
+                  )}
                 </div>
               </div>
             ))}

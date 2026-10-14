@@ -61,16 +61,28 @@ export default function HomePage() {
                 Discover produce from different regions of India. Each product
                 tells a story of its origin, cultivation practices, and local heritage.
               </p>
-              <Link href="/products">
+              <a
+                href="https://maps.app.goo.gl/9hqCd7QZdVSMDpmeA"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
                 <Button>View on Map</Button>
-              </Link>
+              </a>
             </div>
-            <div className="h-64 lg:h-80 rounded-2xl bg-muted flex items-center justify-center">
-              <div className="text-center text-muted-foreground">
-                <MapPin className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                <p className="text-sm">Interactive map coming soon</p>
-              </div>
-            </div>
+            <a
+              href="https://maps.app.goo.gl/9hqCd7QZdVSMDpmeA"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block h-64 lg:h-80 rounded-2xl overflow-hidden"
+            >
+              <iframe
+                title="Velammal Bodhi Campus Dindigul map"
+                src="https://maps.google.com/maps?q=10.3841459,78.0250127&z=15&output=embed"
+                className="h-full w-full border-0 pointer-events-none"
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+              />
+            </a>
           </div>
         </div>
       </section>
